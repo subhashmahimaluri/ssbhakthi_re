@@ -1,0 +1,80 @@
+{
+  "realm": "ssbhakthi",
+  "enabled": true,
+  "users": [
+    {
+      "username": "editor1",
+      "email": "editor1@local",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!",
+          "temporary": false
+        }
+      ],
+      "requiredActions": [],
+      "realmRoles": ["editor"]
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "admin",
+        "description": "Administrator role with full access"
+      },
+      {
+        "name": "editor",
+        "description": "Editor role for content management"
+      },
+      {
+        "name": "author",
+        "description": "Author role for content creation"
+      },
+      {
+        "name": "viewer",
+        "description": "Viewer role for read-only access"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "admin-app",
+      "name": "admin-app",
+      "enabled": true,
+      "publicClient": true,
+      "redirectUris": ["http://localhost:3000/*", "http://localhost:3001/*"],
+      "webOrigins": ["http://localhost:3000", "http://localhost:3001"],
+      "standardFlowEnabled": true,
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "claim.name": "realm_access.roles",
+            "json.name": "realm_access.roles"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "api-app",
+      "name": "api-app",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocolMappers": [
+        {
+          "name": "audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "audience": "api-app"
+          }
+        }
+      ]
+    }
+  ]
+}

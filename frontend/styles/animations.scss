@@ -1,0 +1,567 @@
+// styles/animations.scss - Animation Definitions
+// =====================================================
+
+// Keyframe animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes bounce {
+  0%,
+  20%,
+  53%,
+  80%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%,
+  43% {
+    transform: translate3d(0, -30px, 0);
+  }
+  70% {
+    transform: translate3d(0, -15px, 0);
+  }
+  90% {
+    transform: translate3d(0, -4px, 0);
+  }
+}
+
+// Animation utility classes
+.animate {
+  &-fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  &-slide-down {
+    animation: slideDown 0.3s ease;
+  }
+
+  &-spin {
+    animation: spin 1s linear infinite;
+  }
+
+  &-pulse {
+    animation: pulse 2s infinite;
+  }
+
+  &-bounce {
+    animation: bounce 1s infinite;
+  }
+}
+
+// Transition utilities
+.transition {
+  &-base {
+    transition: $transition-base;
+  }
+
+  &-fast {
+    transition: $transition-fast;
+  }
+
+  &-slow {
+    transition: $transition-slow;
+  }
+}
+
+// Hover effects
+.hover {
+  &-lift {
+    transition: transform 0.3s ease;
+
+    &:hover {
+      transform: translateY(-4px);
+    }
+  }
+
+  &-scale {
+    transition: transform 0.3s ease;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  &-glow {
+    transition: box-shadow 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 0 20px rgba($primary-color, 0.3);
+    }
+  }
+}
+
+// =====================================================
+// styles/languages.scss - Language-Specific Styles
+// =====================================================
+
+// Base language classes
+.lang {
+  &-te {
+    @include language-font('te');
+    direction: ltr;
+
+    // Telugu-specific adjustments
+    line-height: 1.7; // Better line height for Telugu script
+    letter-spacing: 0.02em;
+  }
+
+  &-hi {
+    @include language-font('hi');
+    direction: ltr;
+
+    // Hindi-specific adjustments
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+  }
+
+  &-kn {
+    @include language-font('kn');
+    direction: ltr;
+
+    // Kannada-specific adjustments
+    line-height: 1.7;
+    letter-spacing: 0.02em;
+  }
+
+  &-en {
+    @include language-font('en');
+    direction: ltr;
+
+    // English-specific adjustments
+    line-height: 1.5;
+    letter-spacing: 0;
+  }
+}
+
+// Language attribute selectors (for semantic HTML)
+[lang='te'] {
+  @extend .lang-te;
+}
+
+[lang='hi'] {
+  @extend .lang-hi;
+}
+
+[lang='kn'] {
+  @extend .lang-kn;
+}
+
+[lang='en'] {
+  @extend .lang-en;
+}
+
+// Instance-specific body classes (for development)
+body {
+  &.instance-te {
+    @include instance-indicator($telugu-accent, 'TE/EN');
+  }
+
+  &.instance-hi {
+    @include instance-indicator($hindi-accent, 'HI');
+  }
+
+  &.instance-kn {
+    @include instance-indicator($kannada-accent, 'KN');
+  }
+}
+
+// Language switcher styles
+.language-switcher {
+  .dropdown-toggle {
+    border: none;
+    background: transparent;
+
+    &::after {
+      margin-left: $spacing-sm;
+    }
+  }
+
+  .dropdown-menu {
+    min-width: 200px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .dropdown-item {
+    padding: $spacing-sm $spacing-md;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    &:hover {
+      background-color: rgba($primary-color, 0.1);
+    }
+
+    &.active {
+      background-color: $primary-color;
+      color: white;
+    }
+
+    .domain-info {
+      font-size: 0.75rem;
+      opacity: 0.7;
+      font-family: monospace;
+    }
+  }
+}
+
+// =====================================================
+// styles/components.scss - Component-Specific Styles
+// =====================================================
+
+// Header component
+.app-header {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+  .navbar-brand {
+    font-weight: 600;
+    font-size: 1.25rem;
+
+    &:hover {
+      color: rgba(255, 255, 255, 0.9) !important;
+    }
+  }
+
+  .navbar-nav {
+    .nav-link {
+      position: relative;
+      transition: $transition-base;
+
+      &:hover {
+        color: rgba(255, 255, 255, 0.9) !important;
+      }
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 0;
+        height: 2px;
+        background-color: white;
+        transition: width 0.3s ease;
+      }
+
+      &:hover::after {
+        width: 80%;
+      }
+    }
+  }
+}
+
+// Footer component
+.app-footer {
+  margin-top: auto;
+  background: linear-gradient(135deg, #343a40 0%, #495057 100%);
+
+  .footer-content {
+    padding: $spacing-xl 0 $spacing-lg;
+  }
+
+  .footer-section {
+    h5 {
+      color: white;
+      margin-bottom: $spacing-md;
+      font-weight: 600;
+    }
+
+    p,
+    a {
+      color: rgba(255, 255, 255, 0.8);
+      transition: $transition-fast;
+
+      &:hover {
+        color: white;
+      }
+    }
+  }
+}
+
+// Card components
+.custom-card {
+  @include card-hover-effect;
+  border: none;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+
+  .card-header {
+    background: linear-gradient(135deg, $primary-color 0%, darken($primary-color, 10%) 100%);
+    color: white;
+    border: none;
+    padding: $spacing-md $spacing-lg;
+
+    h5 {
+      margin: 0;
+      font-weight: 600;
+    }
+  }
+
+  .card-body {
+    padding: $spacing-lg;
+  }
+
+  .card-footer {
+    background-color: rgba($primary-color, 0.05);
+    border: none;
+    padding: $spacing-md $spacing-lg;
+  }
+}
+
+// Form components
+.custom-form {
+  .form-group {
+    margin-bottom: $spacing-lg;
+  }
+
+  .form-label {
+    font-weight: 600;
+    margin-bottom: $spacing-sm;
+    color: $dark;
+  }
+
+  .form-control {
+    border-radius: $border-radius;
+    border: 2px solid #e9ecef;
+    padding: $spacing-sm $spacing-md;
+    transition: $transition-base;
+
+    &:focus {
+      border-color: $primary-color;
+      box-shadow: 0 0 0 0.2rem rgba($primary-color, 0.25);
+    }
+
+    &.is-invalid {
+      border-color: $danger-color;
+    }
+
+    &.is-valid {
+      border-color: $success-color;
+    }
+  }
+
+  .btn {
+    padding: $spacing-sm $spacing-lg;
+    font-weight: 600;
+    border-radius: $border-radius;
+    transition: $transition-base;
+
+    &.btn-primary {
+      @include button-variant($primary-color);
+    }
+  }
+}
+
+// Alert components
+.alert {
+  border: none;
+  border-radius: $border-radius-lg;
+  padding: $spacing-md $spacing-lg;
+  animation: slideDown 0.3s ease;
+
+  &.alert-success {
+    background: linear-gradient(135deg, $success-color 0%, darken($success-color, 5%) 100%);
+    color: white;
+  }
+
+  &.alert-danger {
+    background: linear-gradient(135deg, $danger-color 0%, darken($danger-color, 5%) 100%);
+    color: white;
+  }
+
+  &.alert-warning {
+    background: linear-gradient(135deg, $warning-color 0%, darken($warning-color, 5%) 100%);
+    color: $dark;
+  }
+
+  &.alert-info {
+    background: linear-gradient(135deg, $info-color 0%, darken($info-color, 5%) 100%);
+    color: white;
+  }
+}
+
+// Loading spinner
+.loading-spinner {
+  @include center-content;
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba($primary-color, 0.3);
+    border-top: 4px solid $primary-color;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+}
+
+// =====================================================
+// styles/utilities.scss - Utility Classes
+// =====================================================
+
+// Spacing utilities (extending Bootstrap)
+@for $i from 6 through 10 {
+  .m-#{$i} {
+    margin: #{$i * 0.25}rem !important;
+  }
+  .mt-#{$i} {
+    margin-top: #{$i * 0.25}rem !important;
+  }
+  .mr-#{$i} {
+    margin-right: #{$i * 0.25}rem !important;
+  }
+  .mb-#{$i} {
+    margin-bottom: #{$i * 0.25}rem !important;
+  }
+  .ml-#{$i} {
+    margin-left: #{$i * 0.25}rem !important;
+  }
+  .mx-#{$i} {
+    margin-left: #{$i * 0.25}rem !important;
+    margin-right: #{$i * 0.25}rem !important;
+  }
+  .my-#{$i} {
+    margin-top: #{$i * 0.25}rem !important;
+    margin-bottom: #{$i * 0.25}rem !important;
+  }
+
+  .p-#{$i} {
+    padding: #{$i * 0.25}rem !important;
+  }
+  .pt-#{$i} {
+    padding-top: #{$i * 0.25}rem !important;
+  }
+  .pr-#{$i} {
+    padding-right: #{$i * 0.25}rem !important;
+  }
+  .pb-#{$i} {
+    padding-bottom: #{$i * 0.25}rem !important;
+  }
+  .pl-#{$i} {
+    padding-left: #{$i * 0.25}rem !important;
+  }
+  .px-#{$i} {
+    padding-left: #{$i * 0.25}rem !important;
+    padding-right: #{$i * 0.25}rem !important;
+  }
+  .py-#{$i} {
+    padding-top: #{$i * 0.25}rem !important;
+    padding-bottom: #{$i * 0.25}rem !important;
+  }
+}
+
+// Text utilities
+.text {
+  &-gradient {
+    background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  &-shadow {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  &-truncate-2 {
+    @include text-truncate(2);
+  }
+
+  &-truncate-3 {
+    @include text-truncate(3);
+  }
+}
+
+// Display utilities
+.min-vh-100 {
+  min-height: 100vh;
+}
+
+.vh-50 {
+  height: 50vh;
+}
+
+.full-width {
+  width: 100% !important;
+}
+
+.center-content {
+  @include center-content;
+}
+
+// Border utilities
+.border-gradient {
+  border: 2px solid;
+  border-image: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%) 1;
+}
+
+// Shadow utilities
+.shadow {
+  &-soft {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  &-medium {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  &-strong {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+}
+
+// Responsive utilities
+.responsive-img {
+  max-width: 100%;
+  height: auto;
+}
+
+// Debug utilities (development only)
+.debug {
+  outline: 2px solid red;
+
+  &-blue {
+    outline: 2px solid blue;
+  }
+
+  &-green {
+    outline: 2px solid green;
+  }
+}

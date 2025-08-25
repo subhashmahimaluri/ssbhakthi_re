@@ -1,0 +1,277 @@
+scalar DateTime
+scalar JSON
+
+type LocaleString {
+  en: String
+  te: String
+}
+
+enum ArticleStatus {
+  DRAFT
+  REVIEW
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+type MediaAsset {
+  id: ID!
+  filename: String!
+  originalName: String!
+  mimeType: String!
+  size: Int!
+  url: String!
+  alt: String
+  caption: String
+  meta: JSON
+  uploadedBy: String!
+  tags: [String!]!
+  isPublic: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Category {
+  id: ID!
+  name: LocaleString!
+  slug: LocaleString!
+  description: LocaleString
+  parent: Category
+  order: Int!
+  isActive: Boolean!
+  meta: JSON
+  createdBy: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Tag {
+  id: ID!
+  name: String!
+  lang: String!
+  slug: String!
+  description: String
+  color: String
+  isActive: Boolean!
+  createdBy: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type AuditInfo {
+  createdBy: String!
+  createdAt: DateTime!
+  updatedBy: String
+  updatedAt: DateTime!
+}
+
+type ArticleSchedule {
+  publishAt: DateTime
+  unpublishAt: DateTime
+}
+
+type Article {
+  id: ID!
+  type: String!
+  title: LocaleString!
+  slug: LocaleString!
+  summary: LocaleString
+  bodyHtml: LocaleString
+  cover: MediaAsset
+  categories: [Category!]!
+  tags: [Tag!]!
+  locales: [String!]!
+  status: ArticleStatus!
+  revision: Int!
+  schedule: ArticleSchedule
+  seo: JSON
+  meta: JSON
+  audit: AuditInfo!
+  isActive: Boolean!
+}
+
+type User {
+  id: ID!
+  email: String!
+  username: String
+  firstName: String
+  lastName: String
+  roles: [String!]!
+  isActive: Boolean!
+  lastLogin: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ArticlesResult {
+  items: [Article!]!
+  total: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+type CategoriesResult {
+  items: [Category!]!
+  total: Int!
+}
+
+type TagsResult {
+  items: [Tag!]!
+  total: Int!
+}
+
+# Input types
+input LocaleStringInput {
+  en: String
+  te: String
+}
+
+input ArticleScheduleInput {
+  publishAt: DateTime
+  unpublishAt: DateTime
+}
+
+input ArticleInput {
+  type: String!
+  title: LocaleStringInput!
+  slug: LocaleStringInput!
+  summary: LocaleStringInput
+  bodyHtml: LocaleStringInput
+  cover: ID
+  categories: [ID!]
+  tags: [ID!]
+  locales: [String!]!
+  status: ArticleStatus
+  schedule: ArticleScheduleInput
+  seo: JSON
+  meta: JSON
+}
+
+input CategoryInput {
+  name: LocaleStringInput!
+  slug: LocaleStringInput!
+  description: LocaleStringInput
+  parent: ID
+  order: Int
+  meta: JSON
+}
+
+input TagInput {
+  name: String!
+  lang: String!
+  slug: String!
+  description: String
+  color: String
+}
+
+input MediaAssetInput {
+  filename: String!
+  originalName: String!
+  mimeType: String!
+  size: Int!
+  url: String!
+  alt: String
+  caption: String
+  meta: JSON
+  tags: [String!]
+  isPublic: Boolean
+}
+
+# Filtering inputs
+input ArticleFilters {
+  locale: String
+  type: String
+  status: ArticleStatus
+  tag: String
+  category: ID
+  search: String
+  createdBy: String
+}
+
+input CategoryFilters {
+  parent: ID
+  isActive: Boolean
+}
+
+input TagFilters {
+  lang: String
+  isActive: Boolean
+}
+
+# Sorting inputs
+enum ArticleSortField {
+  CREATED_AT
+  UPDATED_AT
+  TITLE
+  STATUS
+}
+
+enum SortDirection {
+  ASC
+  DESC
+}
+
+input SortInput {
+  field: String!
+  direction: SortDirection!
+}
+
+# Directives
+directive @auth on FIELD_DEFINITION
+directive @hasRole(roles: [String!]!) on FIELD_DEFINITION
+
+type Query {
+  # Health check
+  ping: String!
+
+  # User queries
+  me: User @auth
+
+  # Article queries
+  article(id: ID!): Article
+  articles(
+    filters: ArticleFilters
+    limit: Int = 20
+    offset: Int = 0
+    sort: [SortInput!] = [{ field: "UPDATED_AT", direction: DESC }]
+  ): ArticlesResult!
+
+  # Category queries
+  category(id: ID!): Category
+  categories(filters: CategoryFilters, limit: Int = 50, offset: Int = 0): CategoriesResult!
+
+  # Tag queries
+  tag(id: ID!): Tag
+  tags(filters: TagFilters, limit: Int = 100, offset: Int = 0): TagsResult!
+
+  # Media queries
+  mediaAsset(id: ID!): MediaAsset
+  mediaAssets(limit: Int = 20, offset: Int = 0): [MediaAsset!]!
+}
+
+type Mutation {
+  # Article mutations
+  createArticle(input: ArticleInput!): Article! @hasRole(roles: ["author", "editor", "admin"])
+  updateArticle(id: ID!, input: ArticleInput!): Article!
+    @hasRole(roles: ["author", "editor", "admin"])
+  changeArticleStatus(id: ID!, status: ArticleStatus!, publishAt: DateTime): Article!
+    @hasRole(roles: ["editor", "admin"])
+  deleteArticle(id: ID!): Boolean! @hasRole(roles: ["admin"])
+
+  # Category mutations
+  createCategory(input: CategoryInput!): Category! @hasRole(roles: ["editor", "admin"])
+  updateCategory(id: ID!, input: CategoryInput!): Category! @hasRole(roles: ["editor", "admin"])
+  deleteCategory(id: ID!): Boolean! @hasRole(roles: ["admin"])
+
+  # Tag mutations
+  createTag(input: TagInput!): Tag! @hasRole(roles: ["author", "editor", "admin"])
+  updateTag(id: ID!, input: TagInput!): Tag! @hasRole(roles: ["editor", "admin"])
+  deleteTag(id: ID!): Boolean! @hasRole(roles: ["admin"])
+
+  # Media mutations
+  createMediaAsset(input: MediaAssetInput!): MediaAsset!
+    @hasRole(roles: ["author", "editor", "admin"])
+  updateMediaAsset(id: ID!, input: MediaAssetInput!): MediaAsset!
+    @hasRole(roles: ["author", "editor", "admin"])
+  deleteMediaAsset(id: ID!): Boolean! @hasRole(roles: ["admin"])
+}

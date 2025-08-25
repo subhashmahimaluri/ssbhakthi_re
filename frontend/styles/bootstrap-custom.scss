@@ -1,0 +1,58 @@
+// =====================================================
+// styles/bootstrap-custom.scss - Bootstrap Customization
+// =====================================================
+
+@use 'sass:map';
+
+// Load Bootstrap with all functions and variables first
+@use '~bootstrap/scss/functions';
+@use '~bootstrap/scss/variables' as *;
+
+// Override Bootstrap variables
+$primary: #0d6efd;
+$secondary: #6c757d;
+$success: #198754;
+$danger: #dc3545;
+$warning: #ffc107;
+$info: #0dcaf0;
+
+// Your accent colors (define them somewhere globally)
+$telugu-accent: #ff5722;
+$hindi-accent: #4caf50;
+$kannada-accent: #2196f3;
+$english-accent: #9c27b0;
+
+// Add custom theme colors
+$custom-colors: (
+  'telugu': $telugu-accent,
+  'hindi': $hindi-accent,
+  'kannada': $kannada-accent,
+  'english': $english-accent,
+);
+
+// Merge custom colors into Bootstrap's theme map
+$theme-colors: map.merge(variables.$theme-colors, $custom-colors);
+
+// Other Bootstrap customizations
+$font-family-sans-serif: system-ui, sans-serif;
+$font-size-base: 1rem;
+$line-height-base: 1.6;
+$spacer: 1rem;
+
+$spacers: (
+  0: 0,
+  1: $spacer * 0.25,
+  2: $spacer * 0.5,
+  3: $spacer,
+  4: $spacer * 1.5,
+  5: $spacer * 3,
+  6: $spacer * 4,
+  7: $spacer * 5,
+);
+
+$border-radius: 0.375rem;
+$border-radius-sm: 0.25rem;
+$border-radius-lg: 0.5rem;
+
+// Load all Bootstrap
+@use '~bootstrap/scss/bootstrap';
