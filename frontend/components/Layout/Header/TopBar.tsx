@@ -5,12 +5,10 @@ import { Locale } from '@/locales';
 import { SessionProvider } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useRouter } from 'next/router';
 import MyAccount from './MyAccount';
 
 export default function TopBar() {
   const { t, locale, switchLanguage } = useTranslation();
-  const router = useRouter();
   const pathname = usePathname();
 
   const languages = [
@@ -25,18 +23,38 @@ export default function TopBar() {
       {/* Left: Language Links */}
       <div className="col-6 topbar-call text-start">
         <ul className="contact gr-text-10 gr-text-color gr-hover-text-orange mb-1 mt-1 py-1">
-          {languages.map((language, index) => (
-            <li key={index}>
-              <Link
-                href={pathname || '/'} // keep the current path
-                locale={language.code}
-                onClick={e => switchLanguage(language.code)}
-                className={locale === language.code ? 'lang-active' : ''}
-              >
-                {language.name}
-              </Link>
-            </li>
-          ))}
+          {languages.map((language, index) => {
+            const isSameDomain =
+              (language.code === 'te' || language.code === 'en') &&
+              (locale === 'te' || locale === 'en');
+
+            return (
+              <li key={index}>
+                {isSameDomain ? (
+                  // Same domain - use Next.js Link
+                  <Link
+                    href={pathname || '/'}
+                    locale={language.code}
+                    className={locale === language.code ? 'lang-active' : ''}
+                  >
+                    {language.name}
+                  </Link>
+                ) : (
+                  // Cross domain - use button with switchLanguage
+                  <a
+                    href="#"
+                    onClick={e => {
+                      e.preventDefault();
+                      switchLanguage(language.code);
+                    }}
+                    className={locale === language.code ? 'lang-active' : ''}
+                  >
+                    {language.name}
+                  </a>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </div>
 
