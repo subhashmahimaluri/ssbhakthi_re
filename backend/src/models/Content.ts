@@ -1,0 +1,275 @@
+import mongoose, { Document, Schema } from 'mongoose';
+
+// Language codes supported by the system
+export type LanguageCode = 'en' | 'te' | 'hi' | 'kn';
+
+// Content types
+export type ContentType = 'stotra' | 'article';
+
+// Status values
+export type ContentStatus = 'draft' | 'published';
+
+// Translation interface for a specific language
+export interface ITranslation {
+  title: string;
+  seoTitle?: string | null;
+  youtubeUrl?: string | null;
+  slug: string;
+  path: string;
+
+  // Stotra-specific fields (used when contentType is 'stotra')
+  stotra?: string | null;
+  stotraMeaning?: string | null;
+
+  // Article-specific field (used when contentType is 'article')
+  body?: string | null;
+}
+
+// Categories structure
+export interface ICategories {
+  typeIds: mongoose.Types.ObjectId[];
+  devaIds: mongoose.Types.ObjectId[];
+  byNumberIds: mongoose.Types.ObjectId[];
+}
+
+// Main content interface
+export interface IContent extends Document {
+  id: string;
+  contentType: ContentType;
+  canonicalSlug: string;
+  categories: ICategories;
+  imageUrl?: string | null;
+  status: ContentStatus;
+  translations: Record<string, ITranslation>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Translation schema (embedded)
+const TranslationSchema = new Schema<ITranslation>(
+  {
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 1,
+      maxlength: 200,
+    },
+    seoTitle: {
+      type: String,
+      default: null,
+      trim: true,
+      maxlength: 300,
+    },
+    youtubeUrl: {
+      type: String,
+      default: null,
+      trim: true,
+      validate: {
+        validator: function (v: string | null) {
+          if (!v) return true;
+          return /^https?:\/\/.+/.test(v);
+        },
+        message: 'youtubeUrl must be a valid URL',
+      },
+    },
+    slug: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 1,
+      maxlength: 150,
+    },
+    path: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 1,
+      maxlength: 300,
+    },
+
+    // Stotra fields
+    stotra: {
+      type: String,
+      default: null,
+    },
+    stotraMeaning: {
+      type: String,
+      default: null,
+    },
+
+    // Article field
+    body: {
+      type: String,
+      default: null,
+    },
+  },
+  {
+    _id: false, // Don't create _id for embedded documents
+    minimize: false,
+  }
+);
+
+// Categories schema (embedded)
+const CategoriesSchema = new Schema<ICategories>(
+  {
+    typeIds: {
+      type: [Schema.Types.ObjectId],
+      default: [],
+      ref: 'Category',
+    },
+    devaIds: {
+      type: [Schema.Types.ObjectId],
+      default: [],
+      ref: 'Category',
+    },
+    byNumberIds: {
+      type: [Schema.Types.ObjectId],
+      default: [],
+      ref: 'Category',
+    },
+  },
+  {
+    _id: false,
+  }
+);
+
+// Main content schema
+const ContentSchema = new Schema<IContent>(
+  {
+    contentType: {
+      type: String,
+      required: true,
+      enum: ['stotra', 'article'],
+    },
+    canonicalSlug: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+      minlength: 1,
+      maxlength: 150,
+      validate: {
+        validator: function (v: string) {
+          return /^[a-z0-9-]+$/.test(v);
+        },
+        message: 'canonicalSlug must contain only lowercase letters, numbers, and hyphens',
+      },
+    },
+    categories: {
+      type: CategoriesSchema,
+      required: true,
+    },
+    imageUrl: {
+      type: String,
+      default: null,
+      trim: true,
+      validate: {
+        validator: function (v: string | null) {
+          if (!v) return true;
+          return /^https?:\/\/.+/.test(v);
+        },
+        message: 'imageUrl must be a valid URL',
+      },
+    },
+    status: {
+      type: String,
+      required: true,
+      enum: ['draft', 'published'],
+      default: 'draft',
+    },
+    translations: {
+      type: Schema.Types.Mixed,
+      required: true,
+      validate: {
+        validator: function (v: Record<string, ITranslation>) {
+          // At least one translation must exist
+          return Object.keys(v).length > 0;
+        },
+        message: 'At least one translation is required',
+      },
+    },
+  },
+  {
+    timestamps: true,
+    toJSON: {
+      transform: (_doc: any, ret: any) => {
+        ret.id = ret._id.toString();
+        delete ret._id;
+        delete ret.__v;
+        return ret;
+      },
+    },
+    toObject: {
+      transform: (_doc: any, ret: any) => {
+        ret.id = ret._id.toString();
+        delete ret._id;
+        delete ret.__v;
+        return ret;
+      },
+    },
+  }
+);
+
+// Indexes (these are handled by the setup script, but defined here for reference)
+ContentSchema.index({ canonicalSlug: 1 }, { unique: true });
+ContentSchema.index({ contentType: 1 });
+ContentSchema.index({ status: 1 });
+ContentSchema.index({ createdAt: -1 });
+ContentSchema.index({ updatedAt: -1 });
+
+// Category indexes
+ContentSchema.index({ 'categories.typeIds': 1 });
+ContentSchema.index({ 'categories.devaIds': 1 });
+ContentSchema.index({ 'categories.byNumberIds': 1 });
+
+// Static method to find by slug in any language
+ContentSchema.statics['findBySlug'] = function (slug: string, language?: LanguageCode) {
+  if (language) {
+    return this.findOne({ [`translations.${language}.slug`]: slug });
+  }
+
+  // Search in all languages
+  return this.findOne({
+    $or: [
+      { 'translations.en.slug': slug },
+      { 'translations.te.slug': slug },
+      { 'translations.hi.slug': slug },
+      { 'translations.kn.slug': slug },
+    ],
+  });
+};
+
+// Static method to find by path
+ContentSchema.statics['findByPath'] = function (path: string) {
+  return this.findOne({
+    $or: [
+      { 'translations.en.path': path },
+      { 'translations.te.path': path },
+      { 'translations.hi.path': path },
+      { 'translations.kn.path': path },
+    ],
+  });
+};
+
+// Static method to find by category
+ContentSchema.statics['findByCategory'] = function (
+  categoryId: mongoose.Types.ObjectId,
+  taxonomy?: 'type' | 'deva' | 'byNumber'
+) {
+  if (taxonomy) {
+    return this.find({ [`categories.${taxonomy}Ids`]: categoryId });
+  }
+
+  // Search in all category types
+  return this.find({
+    $or: [
+      { 'categories.typeIds': categoryId },
+      { 'categories.devaIds': categoryId },
+      { 'categories.byNumberIds': categoryId },
+    ],
+  });
+};
+
+export const Content = mongoose.model<IContent>('Content', ContentSchema);

@@ -1,11 +1,11 @@
 // hooks/useTranslation.ts - Updated for multi-instance
+import { dictionaries, type Locale } from '@/locales';
 import { useRouter } from 'next/router';
-import { dictionaries, type Dictionary, type Locale } from '@/locales';
 
 // Domain/port mapping for each language
 const LANGUAGE_DOMAINS = {
   te: 'http://localhost:3000',
-  en: 'http://localhost:3000/en',
+  en: 'http://localhost:3000',
   hi: 'http://localhost:3001',
   kn: 'http://localhost:3002',
 };
@@ -18,12 +18,15 @@ export function useTranslation() {
   const switchLanguage = (newLocale: Locale) => {
     const { pathname, query } = router;
 
-    // If switching to te or en (same domain)
-    if ((newLocale === 'te' || newLocale === 'en') && (locale === 'te' || locale === 'en')) {
+    // Check if both current and target locales are on the same domain (port 3000 for te/en)
+    const currentDomain = LANGUAGE_DOMAINS[locale];
+    const targetDomain = LANGUAGE_DOMAINS[newLocale];
+
+    if (currentDomain === targetDomain) {
+      // Same domain switch - use Next.js router
       router.push({ pathname, query }, router.asPath, { locale: newLocale });
     } else {
       // Cross-domain switch - redirect to different port/domain
-      const targetDomain = LANGUAGE_DOMAINS[newLocale];
       const currentPath = pathname === '/' ? '' : pathname;
       const queryString =
         Object.keys(query).length > 0
