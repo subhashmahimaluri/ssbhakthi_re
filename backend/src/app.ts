@@ -6,6 +6,7 @@ import { apolloServer, createGraphQLMiddleware } from './graphql/server';
 import { errorHandler, notFoundHandler } from './middleware/error';
 import healthRoutes from './routes/health';
 import mediaRoutes from './routes/media';
+import stotrasRoutes from './routes/stotras';
 
 class App {
   public app: Application;
@@ -66,6 +67,7 @@ class App {
           rest: {
             health: '/rest/health',
             media: '/rest/media',
+            stotras: '/rest/stotras',
           },
           graphql: '/graphql',
         },
@@ -75,6 +77,7 @@ class App {
     // REST API routes
     this.app.use('/rest/health', healthRoutes);
     this.app.use('/rest/media', mediaRoutes);
+    this.app.use('/rest/stotras', stotrasRoutes);
 
     // Authentication test routes
     this.app.get('/auth/me', requireAuth, (req, res) => {

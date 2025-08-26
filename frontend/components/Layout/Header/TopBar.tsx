@@ -31,7 +31,7 @@ export default function TopBar() {
             return (
               <li key={index}>
                 {isSameDomain ? (
-                  // Same domain - use Next.js Link
+                  // Same domain - use Next.js Link with proper language path
                   <Link
                     href={pathname || '/'}
                     locale={language.code}

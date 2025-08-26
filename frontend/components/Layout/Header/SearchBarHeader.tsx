@@ -1,5 +1,7 @@
-import { useState, FormEvent } from 'react';
+'use client';
+
 import { useRouter } from 'next/navigation';
+import { FormEvent, useState } from 'react';
 
 type Props = {
   mobile?: boolean;

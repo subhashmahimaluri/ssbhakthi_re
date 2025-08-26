@@ -1,3 +1,5 @@
+'use client';
+
 import { device } from '@/utils/breakpoints';
 import { useScrollPosition } from '@n8tb1t/use-scroll-position';
 import Image from 'next/image';
