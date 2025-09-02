@@ -4,9 +4,7 @@ import { Card, Col } from 'react-bootstrap';
 interface StotraTranslation {
   title: string;
   seoTitle: string;
-  slug: string;
-  path: string;
-  youtubeUrl?: string | null;
+  videoId?: string | null;
   stotra: string;
   stotraMeaning: string;
   body?: string | null;
