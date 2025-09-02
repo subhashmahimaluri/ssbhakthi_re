@@ -1,6 +1,7 @@
 import Layout from '@/components/Layout/Layout';
 import StotraCard from '@/components/StotraCard';
 import { useTranslation } from '@/hooks/useTranslation';
+import { getStotrasMetaData } from '@/utils/seo';
 import { useEffect, useState } from 'react';
 import { Col, Row } from 'react-bootstrap';
 
@@ -36,6 +37,7 @@ interface StotrasResponse {
 
 export default function Stotras() {
   const { t, locale } = useTranslation();
+  const { title, description } = getStotrasMetaData(locale);
 
   console.log('Current locale:', locale);
   const [stotras, setStotras] = useState<any[]>([]);
@@ -66,7 +68,7 @@ export default function Stotras() {
     }
   };
   return (
-    <Layout>
+    <Layout title={title} description={description}>
       <Row className="mt-25 py-5">
         <Col xl="8" lg="8" md="12" className="my-5 py-5">
           <div className="left-container shadow-1 panchangam-block px-md-10 bg-white px-5 py-3 text-black">
