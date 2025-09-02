@@ -1,6 +1,7 @@
 'use client';
 
 import Layout from '@/components/Layout/Layout';
+import CommentSection from '@/components/comments/CommentSection';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getStotraDetailMetaData } from '@/utils/seo';
 import { useRouter } from 'next/router';
@@ -373,6 +374,9 @@ export default function StotraPage() {
                 <strong>Canonical ID:</strong> {stotra.canonicalSlug}
               </small>
             </div>
+
+            {/* Comments Section */}
+            <CommentSection contentType="stotra" canonicalSlug={stotra.canonicalSlug} />
           </div>
         </Col>
         <Col xl="4" lg="4" md="12" className="my-5 py-5">

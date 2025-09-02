@@ -1,6 +1,7 @@
 'use client';
 
 import Layout from '@/components/Layout/Layout';
+import CommentSection from '@/components/comments/CommentSection';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getArticleDetailMetaData } from '@/utils/seo';
 import { useRouter } from 'next/router';
@@ -349,6 +350,9 @@ export default function ArticlePage() {
                 <strong>Canonical ID:</strong> {article.canonicalSlug}
               </small>
             </div>
+
+            {/* Comments Section */}
+            <CommentSection contentType="article" canonicalSlug={article.canonicalSlug} />
           </div>
         </Col>
         <Col xl="4" lg="4" md="12" className="my-5 py-5">
