@@ -6,6 +6,7 @@ import { connectDB } from './config/database';
 import { apolloServer, createGraphQLMiddleware } from './graphql/server';
 import { errorHandler, notFoundHandler } from './middleware/error';
 import articlesRoutes from './routes/articles';
+import commentsRoutes from './routes/comments';
 import healthRoutes from './routes/health';
 import mediaRoutes from './routes/media';
 import stotrasRoutes from './routes/stotras';
@@ -74,6 +75,7 @@ class App {
             media: '/rest/media',
             stotras: '/rest/stotras',
             articles: '/rest/articles',
+            comments: '/rest/comments',
           },
           graphql: '/graphql',
         },
@@ -85,6 +87,7 @@ class App {
     this.app.use('/rest/media', mediaRoutes);
     this.app.use('/rest/stotras', stotrasRoutes);
     this.app.use('/rest/articles', articlesRoutes);
+    this.app.use('/rest/comments', commentsRoutes);
 
     // Authentication test routes
     this.app.get('/auth/me', requireAuth, (req, res) => {

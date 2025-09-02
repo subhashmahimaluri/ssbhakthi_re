@@ -37,6 +37,19 @@ function getKey(header: any, callback: any): void {
 // Express middleware to authenticate requests
 export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    // Development bypass for testing
+    if (process.env['NODE_ENV'] === 'development' && process.env['BYPASS_AUTH'] === 'true') {
+      console.log('⚠️  Auth bypassed for development');
+      req.user = {
+        sub: 'dev-user-123',
+        email: 'user@example.com',
+        preferred_username: 'Subhash Ycs', // Use a real-looking name for development
+        roles: ['user'],
+      };
+      next();
+      return;
+    }
+
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -70,6 +83,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
         req.user = {
           sub: decoded.sub,
           email: decoded.email,
+          preferred_username: decoded.preferred_username,
           roles: decoded.realm_access?.roles || [],
         };
 

@@ -1,5 +1,5 @@
 import { GraphQLError } from 'graphql';
-import { Article, ArticleStatus, Category, MediaAsset, Tag } from '../../models';
+import { Article, ArticleStatus, Category, Comment, Content, MediaAsset, Tag } from '../../models';
 import { MutationResolvers } from '../__generated__/types';
 import { GraphQLContext } from '../context';
 
@@ -231,5 +231,73 @@ export const Mutation: MutationResolvers<GraphQLContext> = {
 
     const result = await MediaAsset.findByIdAndDelete(id);
     return !!result;
+  },
+
+  // Comment mutations
+  addComment: async (_, { canonicalSlug, lang, text }, { user }) => {
+    if (!user) {
+      throw new GraphQLError('Authentication required', {
+        extensions: { code: 'UNAUTHENTICATED' },
+      });
+    }
+
+    // Validate language
+    const validLangs = ['en', 'te', 'hi', 'kn'];
+    if (!validLangs.includes(lang)) {
+      throw new GraphQLError(
+        `Invalid language code '${lang}'. Supported: ${validLangs.join(', ')}`,
+        {
+          extensions: { code: 'INVALID_LANGUAGE' },
+        }
+      );
+    }
+
+    // Validate text
+    const trimmedText = text.trim();
+    if (trimmedText.length === 0 || trimmedText.length > 2000) {
+      throw new GraphQLError('Comment text must be between 1 and 2000 characters', {
+        extensions: { code: 'INVALID_TEXT_LENGTH' },
+      });
+    }
+
+    // Find the content and verify it exists
+    const content = await Content.findOne({
+      canonicalSlug,
+      status: 'published',
+    }).lean();
+
+    if (!content) {
+      throw new GraphQLError(`Content with slug '${canonicalSlug}' not found`, {
+        extensions: { code: 'CONTENT_NOT_FOUND' },
+      });
+    }
+
+    // Check if the content has the requested language
+    if (!content.translations[lang]) {
+      throw new GraphQLError(`Content '${canonicalSlug}' not available in language '${lang}'`, {
+        extensions: {
+          code: 'TRANSLATION_NOT_FOUND',
+          availableLanguages: Object.keys(content.translations),
+        },
+      });
+    }
+
+    // Extract user information for the comment
+    const userName = user.preferred_username || user.email?.split('@')[0] || 'Anonymous User';
+
+    // Create new comment
+    const newComment = new Comment({
+      contentId: content._id,
+      canonicalSlug,
+      lang,
+      userId: user.sub,
+      userName,
+      userEmail: user.email,
+      text: trimmedText,
+      status: 'approved', // Default to approved as per requirements
+    });
+
+    const savedComment = await newComment.save();
+    return savedComment;
   },
 };
