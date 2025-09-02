@@ -13,9 +13,7 @@ export type ContentStatus = 'draft' | 'published';
 export interface ITranslation {
   title: string;
   seoTitle?: string | null;
-  youtubeUrl?: string | null;
-  slug: string;
-  path: string;
+  videoId?: string | null;
 
   // Stotra-specific fields (used when contentType is 'stotra')
   stotra?: string | null;
@@ -61,31 +59,18 @@ const TranslationSchema = new Schema<ITranslation>(
       trim: true,
       maxlength: 300,
     },
-    youtubeUrl: {
+    videoId: {
       type: String,
       default: null,
       trim: true,
       validate: {
         validator: function (v: string | null) {
           if (!v) return true;
-          return /^https?:\/\/.+/.test(v);
+          // YouTube video ID validation (11 characters)
+          return /^[a-zA-Z0-9_-]{11}$/.test(v);
         },
-        message: 'youtubeUrl must be a valid URL',
+        message: 'videoId must be a valid YouTube video ID (11 characters)',
       },
-    },
-    slug: {
-      type: String,
-      required: true,
-      trim: true,
-      minlength: 1,
-      maxlength: 150,
-    },
-    path: {
-      type: String,
-      required: true,
-      trim: true,
-      minlength: 1,
-      maxlength: 300,
     },
 
     // Stotra fields

@@ -43,9 +43,7 @@ interface IContent {
     [languageCode]: {
       title: string; // Required: Content title
       seoTitle?: string | null; // Optional: SEO optimized title
-      youtubeUrl?: string | null; // Optional: Associated video
-      slug: string; // Required: URL slug (unique per language)
-      path: string; // Required: Full URL path (unique per language)
+      videoId?: string | null; // Optional: YouTube video ID (11 characters)
 
       // Content type specific fields
       stotra?: string | null; // HTML content for stotras
@@ -102,9 +100,7 @@ await db.contents.insertOne({
     en: {
       title: 'Hanuman Chalisa',
       seoTitle: 'Hanuman Chalisa - Complete Hymn',
-      youtubeUrl: null,
-      slug: 'hanuman-chalisa',
-      path: '/en/stotra/hanuman/hanuman-chalisa',
+      videoId: null,
       stotra: '<p>Stotra content...</p>',
       stotraMeaning: '<p>Meaning...</p>',
       body: null,
@@ -125,9 +121,7 @@ await db.contents.updateOne(
       'translations.te': {
         title: 'హనుమాన్ చాలీసా',
         seoTitle: 'హనుమాన్ చాలీసా - పూర్ణ స్తోత్రం',
-        youtubeUrl: null,
-        slug: 'హనుమాన్-చాలీసా',
-        path: '/te/stotra/hanuman/హనుమాన్-చాలీసా',
+        videoId: null,
         stotra: '<p>తెలుగు స్తోత్రం...</p>',
         stotraMeaning: '<p>అర్థం...</p>',
         body: null,
@@ -145,7 +139,7 @@ await db.contents.updateOne(
   { canonicalSlug: 'hanuman-chalisa' },
   {
     $set: {
-      'translations.en.youtubeUrl': 'https://youtube.com/...',
+      'translations.en.videoId': 'dQw4w9WgXcQ',
       'translations.en.seoTitle': 'Updated SEO Title',
       updatedAt: new Date(),
     },
