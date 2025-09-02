@@ -1,12 +1,67 @@
 /** @type {import('next').NextConfig} */
+
+// Detect which instance this is based on environment or port
+const getInstanceConfig = () => {
+  const port = process.env.PORT;
+  const defaultLocale = process.env.DEFAULT_LOCALE;
+  const supportedLocales = process.env.SUPPORTED_LOCALES;
+
+  // If specific environment variables are set, use them
+  if (defaultLocale && supportedLocales) {
+    const locales = supportedLocales.split(',');
+    return {
+      locales,
+      defaultLocale,
+      localeDetection: false,
+    };
+  }
+
+  // Default fallback based on port
+  switch (port) {
+    case '3001':
+      return {
+        locales: ['hi'],
+        defaultLocale: 'hi',
+        localeDetection: false,
+      };
+    case '3002':
+      return {
+        locales: ['kn'],
+        defaultLocale: 'kn',
+        localeDetection: false,
+      };
+    default:
+      // Port 3000 or undefined - Telugu/English instance
+      return {
+        locales: ['te', 'en'],
+        defaultLocale: 'te',
+        localeDetection: false,
+      };
+  }
+};
+
+const i18nConfig = getInstanceConfig();
+
 const nextConfig = {
   // i18n configuration (Pages Router)
-  i18n: {
-    locales: process.env.SUPPORTED_LOCALES?.split(',') || ['te', 'en'],
-    defaultLocale: process.env.DEFAULT_LOCALE || 'te',
-    localeDetection: false, // Disable auto-detection for multi-instance setup
-  },
+  i18n: i18nConfig,
   trailingSlash: false,
+
+  // Redirects to handle default locale properly
+  async redirects() {
+    const redirects = [];
+
+    // Only add redirects for Telugu/English instance (port 3000)
+    if (i18nConfig.defaultLocale === 'te' && i18nConfig.locales.includes('te')) {
+      redirects.push({
+        source: '/te/:path*',
+        destination: '/:path*',
+        permanent: true,
+      });
+    }
+
+    return redirects;
+  },
 
   // Image optimization configuration
   images: {

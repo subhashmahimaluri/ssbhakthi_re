@@ -9,11 +9,12 @@ const config: CodegenConfig = {
         useIndexSignature: true,
         contextType: '../context#GraphQLContext',
         mappers: {
-          Article: '../../../models/Article#IArticle',
-          User: '../../../models/User#IUser',
-          Category: '../../../models/Category#ICategory',
-          Tag: '../../../models/Tag#ITag',
-          MediaAsset: '../../../models/MediaAsset#IMediaAsset',
+          Article: '../../models#IArticle',
+          User: '../../models#IUser',
+          Category: '../../models#ICategory',
+          Tag: '../../models#ITag',
+          MediaAsset: '../../models#IMediaAsset',
+          Comment: '../../models#IComment',
         },
         scalars: {
           DateTime: 'Date',

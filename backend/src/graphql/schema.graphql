@@ -103,6 +103,21 @@ type User {
   updatedAt: DateTime!
 }
 
+type Comment {
+  id: ID!
+  canonicalSlug: String!
+  lang: String!
+  userName: String!
+  userEmail: String
+  text: String!
+  createdAt: DateTime!
+}
+
+type CommentList {
+  items: [Comment!]!
+  total: Int!
+}
+
 type ArticlesResult {
   items: [Article!]!
   total: Int!
@@ -247,6 +262,14 @@ type Query {
   # Media queries
   mediaAsset(id: ID!): MediaAsset
   mediaAssets(limit: Int = 20, offset: Int = 0): [MediaAsset!]!
+
+  # Comment queries
+  comments(
+    canonicalSlug: String!
+    lang: String = "en"
+    limit: Int = 20
+    offset: Int = 0
+  ): CommentList!
 }
 
 type Mutation {
@@ -274,4 +297,7 @@ type Mutation {
   updateMediaAsset(id: ID!, input: MediaAssetInput!): MediaAsset!
     @hasRole(roles: ["author", "editor", "admin"])
   deleteMediaAsset(id: ID!): Boolean! @hasRole(roles: ["admin"])
+
+  # Comment mutations
+  addComment(canonicalSlug: String!, lang: String!, text: String!): Comment! @auth
 }

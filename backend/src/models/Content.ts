@@ -44,56 +44,8 @@ export interface IContent extends Document {
 }
 
 // Translation schema (embedded)
-const TranslationSchema = new Schema<ITranslation>(
-  {
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-      minlength: 1,
-      maxlength: 200,
-    },
-    seoTitle: {
-      type: String,
-      default: null,
-      trim: true,
-      maxlength: 300,
-    },
-    videoId: {
-      type: String,
-      default: null,
-      trim: true,
-      validate: {
-        validator: function (v: string | null) {
-          if (!v) return true;
-          // YouTube video ID validation (11 characters)
-          return /^[a-zA-Z0-9_-]{11}$/.test(v);
-        },
-        message: 'videoId must be a valid YouTube video ID (11 characters)',
-      },
-    },
-
-    // Stotra fields
-    stotra: {
-      type: String,
-      default: null,
-    },
-    stotraMeaning: {
-      type: String,
-      default: null,
-    },
-
-    // Article field
-    body: {
-      type: String,
-      default: null,
-    },
-  },
-  {
-    _id: false, // Don't create _id for embedded documents
-    minimize: false,
-  }
-);
+// Note: translations field uses Schema.Types.Mixed for flexibility
+// const TranslationSchema = new Schema<ITranslation>(...) // Removed to avoid TS6133
 
 // Categories schema (embedded)
 const CategoriesSchema = new Schema<ICategories>(

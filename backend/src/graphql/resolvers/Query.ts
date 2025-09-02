@@ -1,5 +1,5 @@
 import { GraphQLError } from 'graphql';
-import { Article, Category, MediaAsset, Tag, User } from '../../models';
+import { Article, Category, Comment, Content, MediaAsset, Tag, User } from '../../models';
 import { QueryResolvers } from '../__generated__/types';
 import { GraphQLContext } from '../context';
 
@@ -191,5 +191,62 @@ export const Query: QueryResolvers<GraphQLContext> = {
 
   mediaAssets: async (_, { limit = 20, offset = 0 }) => {
     return MediaAsset.find({ isPublic: true }).sort({ createdAt: -1 }).skip(offset).limit(limit);
+  },
+
+  comments: async (_, { canonicalSlug, lang = 'en', limit = 20, offset = 0 }) => {
+    // Validate language
+    const validLangs = ['en', 'te', 'hi', 'kn'];
+    if (!validLangs.includes(lang)) {
+      throw new GraphQLError(
+        `Invalid language code '${lang}'. Supported: ${validLangs.join(', ')}`,
+        {
+          extensions: { code: 'INVALID_LANGUAGE' },
+        }
+      );
+    }
+
+    // Verify content exists and is published
+    const content = await Content.findOne({
+      canonicalSlug,
+      status: 'published',
+    }).lean();
+
+    if (!content) {
+      throw new GraphQLError(`Content with slug '${canonicalSlug}' not found`, {
+        extensions: { code: 'CONTENT_NOT_FOUND' },
+      });
+    }
+
+    // Check if the content has the requested language
+    if (!content.translations[lang]) {
+      throw new GraphQLError(`Content '${canonicalSlug}' not available in language '${lang}'`, {
+        extensions: {
+          code: 'TRANSLATION_NOT_FOUND',
+          availableLanguages: Object.keys(content.translations),
+        },
+      });
+    }
+
+    // Validate pagination parameters
+    const safeLimit = Math.min(Math.max(limit, 1), 100);
+    const safeOffset = Math.max(offset, 0);
+
+    // Build query for approved comments only
+    const query = {
+      canonicalSlug,
+      lang,
+      status: 'approved',
+    };
+
+    // Execute query with pagination
+    const [items, total] = await Promise.all([
+      Comment.find(query).sort({ createdAt: -1 }).skip(safeOffset).limit(safeLimit).lean(),
+      Comment.countDocuments(query),
+    ]);
+
+    return {
+      items,
+      total,
+    };
   },
 };
