@@ -455,8 +455,23 @@ router.put(
         return;
       }
 
-      // Check if user owns the comment
-      if (comment.userId !== user.sub) {
+      // Check if user owns the comment (by userId or email)
+      const isOwnerByUserId = comment.userId === user.sub;
+      const isOwnerByEmail = user.email && comment.userEmail && comment.userEmail === user.email;
+      const isOwner = isOwnerByUserId || isOwnerByEmail;
+
+      console.log('🔍 Comment ownership check for EDIT:', {
+        commentId,
+        commentUserId: comment.userId,
+        commentUserEmail: comment.userEmail,
+        currentUserId: user.sub,
+        currentUserEmail: user.email,
+        isOwnerByUserId,
+        isOwnerByEmail,
+        isOwner,
+      });
+
+      if (!isOwner) {
         res.status(403).json({
           error: {
             message: 'You can only edit your own comments',
@@ -521,8 +536,23 @@ router.delete('/:commentId', requireAuth, async (req: Request, res: Response): P
       return;
     }
 
-    // Check if user owns the comment
-    if (comment.userId !== user.sub) {
+    // Check if user owns the comment (by userId or email)
+    const isOwnerByUserId = comment.userId === user.sub;
+    const isOwnerByEmail = user.email && comment.userEmail && comment.userEmail === user.email;
+    const isOwner = isOwnerByUserId || isOwnerByEmail;
+
+    console.log('🔍 Comment ownership check for DELETE:', {
+      commentId,
+      commentUserId: comment.userId,
+      commentUserEmail: comment.userEmail,
+      currentUserId: user.sub,
+      currentUserEmail: user.email,
+      isOwnerByUserId,
+      isOwnerByEmail,
+      isOwner,
+    });
+
+    if (!isOwner) {
       res.status(403).json({
         error: {
           message: 'You can only delete your own comments',
