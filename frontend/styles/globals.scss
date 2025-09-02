@@ -200,6 +200,91 @@ body {
   background: $orange;
 }
 
+// Stotras Cards
+.hover-card {
+  transition:
+    transform 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out;
+  border: 1px solid rgba(0, 0, 0, 0.125);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+  }
+
+  .card-body {
+    padding: 1.5rem;
+  }
+
+  .card-title {
+    color: $orange;
+    font-weight: 600;
+  }
+
+  .stotra-title-link {
+    color: $orange !important;
+    font-weight: 600;
+
+    &:hover {
+      color: darken($orange, 15%) !important;
+      text-decoration: none !important;
+    }
+  }
+
+  .btn-primary {
+    background-color: $orange;
+    border-color: $orange;
+
+    &:hover {
+      background-color: darken($orange, 10%);
+      border-color: darken($orange, 10%);
+    }
+  }
+}
+
+// Stotra Detail Page Styles
+.stotra-content,
+.stotra-meaning,
+.stotra-body {
+  line-height: 1.8;
+  font-size: 1.1rem;
+
+  p {
+    margin-bottom: 1rem;
+  }
+
+  br {
+    line-height: 2.5;
+  }
+}
+
+.stotra-content {
+  background-color: #f8f9fa;
+  padding: 2rem;
+  border-radius: 8px;
+  border-left: 4px solid $orange;
+  font-family: 'Times New Roman', serif;
+  text-align: center;
+
+  p {
+    font-size: 1.2rem;
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.stotra-meaning {
+  background-color: #fff8f0;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border-left: 4px solid #ffc107;
+
+  p {
+    color: #495057;
+    font-size: 1.05rem;
+  }
+}
+
 // Backgrounds
 .bg-default-2 {
   background: $gray-120;
@@ -910,5 +995,52 @@ a {
   &:hover {
     background-color: $black;
     color: $orange;
+  }
+}
+
+// 404 Error Page Styling
+.error-404 {
+  .display-1 {
+    font-weight: 900;
+    font-size: 8rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+
+    @media (max-width: 768px) {
+      font-size: 5rem;
+    }
+  }
+
+  .error-description {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .error-actions {
+    .btn {
+      min-width: 120px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      }
+    }
+  }
+
+  .quick-links {
+    a {
+      color: $orange;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.2s ease;
+
+      &:hover {
+        color: $black;
+        text-decoration: underline;
+      }
+    }
   }
 }

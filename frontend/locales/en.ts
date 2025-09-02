@@ -257,4 +257,8 @@ export const en = {
       'List of all {{year}} {{tithiName}} dates and their exact start and end times for {{city}}, {{country}}.',
     tithi_list_month: '{{tithi}} in {{month}}',
   },
+  stotra: {
+    stotra: 'Stotra',
+    stotra_meaning: 'Stotra Meaning',
+  },
 };

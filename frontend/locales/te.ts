@@ -255,4 +255,8 @@ export const te = {
       '{{city}}, {{country}} కోసం {{year}} లోని అన్ని {{tithiName}} తిథుల జాబితా మరియు వాటి ఖచ్చితమైన ప్రారంభ మరియు ముగింపు సమయాలు.',
     tithi_list_month: '{{month}} లో {{tithi}}',
   },
+  stotra: {
+    stotra: 'స్తోత్రం',
+    stotra_meaning: 'స్తోత్ర అర్థం',
+  },
 };

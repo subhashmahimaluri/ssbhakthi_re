@@ -3,6 +3,13 @@ export interface AppConfig {
   nodeEnv: string;
   mongoUrl: string;
   redisUrl: string;
+  // CORS Configuration
+  cors: {
+    origin: string[];
+    credentials: boolean;
+    methods: string[];
+    allowedHeaders: string[];
+  };
   // GraphQL Configuration
   graphql: {
     playground: boolean;
