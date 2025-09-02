@@ -2,33 +2,31 @@
 
 import Layout from '@/components/Layout/Layout';
 import { useTranslation } from '@/hooks/useTranslation';
-import { getStotraDetailMetaData } from '@/utils/seo';
+import { getArticleDetailMetaData } from '@/utils/seo';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Col, Row } from 'react-bootstrap';
 
-interface StotraTranslation {
+interface ArticleTranslation {
   title: string;
   seoTitle: string;
   videoId?: string | null;
-  stotra: string;
-  stotraMeaning: string;
   body?: string | null;
 }
 
-interface StotraDetail {
+interface ArticleDetail {
   canonicalSlug: string;
   contentType: string;
   status: string;
   imageUrl?: string | null;
   categories?: any;
   translations: {
-    [key: string]: StotraTranslation;
+    [key: string]: ArticleTranslation;
   };
   meta: {
     requestedLanguage: string;
     availableLanguages: string[];
-    translation: StotraTranslation;
+    translation: ArticleTranslation;
   };
   createdAt: string;
   updatedAt: string;
@@ -84,19 +82,19 @@ const YouTubeEmbed = ({ videoId }: { videoId: string }) => {
   );
 };
 
-export default function StotraPage() {
+export default function ArticlePage() {
   const { t, locale } = useTranslation();
   const router = useRouter();
   const { slug } = router.query;
   const abortControllerRef = useRef<AbortController | null>(null);
   const hasRedirectedRef = useRef(false);
 
-  const [stotra, setStotra] = useState<StotraDetail | null>(null);
+  const [article, setArticle] = useState<ArticleDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Memoized function to prevent unnecessary re-renders
-  const fetchStotra = useCallback(async () => {
+  const fetchArticle = useCallback(async () => {
     // Prevent multiple redirects
     if (hasRedirectedRef.current) {
       return;
@@ -121,14 +119,14 @@ export default function StotraPage() {
       setLoading(true);
       setError(null);
 
-      const apiUrl = `http://localhost:4000/rest/stotras/${slug}?lang=${locale}`;
-      console.log('Fetching stotra from:', apiUrl);
+      const apiUrl = `http://localhost:4000/rest/articles/${slug}?lang=${locale}`;
+      console.log('Fetching article from:', apiUrl);
 
       const response = await fetch(apiUrl, {
         signal: abortControllerRef.current.signal,
       });
 
-      // If stotra not found (404), redirect to 404 page
+      // If article not found (404), redirect to 404 page
       if (response.status === 404) {
         hasRedirectedRef.current = true;
         router.push('/404');
@@ -139,11 +137,11 @@ export default function StotraPage() {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data: StotraDetail = await response.json();
+      const data: ArticleDetail = await response.json();
 
       // Only update state if component is still mounted and request wasn't aborted
       if (!abortControllerRef.current?.signal.aborted) {
-        setStotra(data);
+        setArticle(data);
         setError(null);
       }
     } catch (err) {
@@ -152,12 +150,12 @@ export default function StotraPage() {
         return;
       }
 
-      console.error('Error fetching stotra:', err);
+      console.error('Error fetching article:', err);
 
       // For network errors or other issues, set error state instead of redirecting
       if (!hasRedirectedRef.current && !abortControllerRef.current?.signal.aborted) {
         setError(
-          err instanceof Error ? err.message : 'An error occurred while fetching the stotra'
+          err instanceof Error ? err.message : 'An error occurred while fetching the article'
         );
       }
     } finally {
@@ -174,9 +172,9 @@ export default function StotraPage() {
 
     // Only proceed if router is ready and we have both slug and locale
     if (router.isReady && slug && locale && typeof slug === 'string') {
-      fetchStotra();
+      fetchArticle();
     }
-  }, [router.isReady, slug, locale, fetchStotra]);
+  }, [router.isReady, slug, locale, fetchArticle]);
 
   // Cleanup function to abort ongoing requests
   useEffect(() => {
@@ -190,7 +188,7 @@ export default function StotraPage() {
   // Show loading state while router is not ready or while fetching
   if (!router.isReady || loading) {
     return (
-      <Layout title="Loading Stotra | SS Bhakthi">
+      <Layout title="Loading Article | SS Bhakthi">
         <Row className="mt-25 py-5">
           <Col xl="8" lg="8" md="12" className="my-5 py-5">
             <div className="left-container shadow-1 px-md-10 bg-white px-5 py-5 text-black">
@@ -214,7 +212,7 @@ export default function StotraPage() {
   // Show error state only if there's an actual error and we're not loading
   if (error && !loading) {
     return (
-      <Layout title="Error Loading Stotra | SS Bhakthi">
+      <Layout title="Error Loading Article | SS Bhakthi">
         <Row className="mt-25 py-5">
           <Col xl="8" lg="8" md="12" className="my-5 py-5">
             <div className="left-container shadow-1 px-md-10 bg-white px-5 py-5 text-black">
@@ -226,7 +224,7 @@ export default function StotraPage() {
                   className="btn btn-primary me-2"
                   onClick={() => {
                     setError(null);
-                    fetchStotra();
+                    fetchArticle();
                   }}
                 >
                   Try Again
@@ -247,25 +245,25 @@ export default function StotraPage() {
     );
   }
 
-  // If no stotra data and no error, something went wrong
-  if (!stotra && !loading && !error) {
+  // If no article data and no error, something went wrong
+  if (!article && !loading && !error) {
     return (
-      <Layout title="Stotra Not Found | SS Bhakthi">
+      <Layout title="Article Not Found | SS Bhakthi">
         <Row className="mt-25 py-5">
           <Col xl="8" lg="8" md="12" className="my-5 py-5">
             <div className="left-container shadow-1 px-md-10 bg-white px-5 py-5 text-black">
               <div className="alert alert-warning" role="alert">
-                Stotra not found or failed to load.
+                Article not found or failed to load.
               </div>
               <div className="mt-3 text-center">
-                <button className="btn btn-primary me-2" onClick={() => fetchStotra()}>
+                <button className="btn btn-primary me-2" onClick={() => fetchArticle()}>
                   Retry
                 </button>
                 <button
                   className="btn btn-secondary"
-                  onClick={() => router.push(`/${locale}/stotras`)}
+                  onClick={() => router.push(`/${locale}/articles`)}
                 >
-                  Browse Stotras
+                  Browse Articles
                 </button>
               </div>
             </div>
@@ -280,10 +278,10 @@ export default function StotraPage() {
     );
   }
 
-  const translation = stotra?.meta?.translation;
+  const translation = article?.meta?.translation;
   const { title } = translation?.seoTitle
-    ? getStotraDetailMetaData(translation.seoTitle)
-    : { title: 'Stotra | SS Bhakthi' };
+    ? getArticleDetailMetaData(translation.seoTitle)
+    : { title: 'Article | SS Bhakthi' };
 
   // Additional safety check for translation data
   if (!translation) {
@@ -293,17 +291,17 @@ export default function StotraPage() {
           <Col xl="8" lg="8" md="12" className="my-5 py-5">
             <div className="left-container shadow-1 px-md-10 bg-white px-5 py-5 text-black">
               <div className="alert alert-warning" role="alert">
-                Translation data not available for this stotra.
+                Translation data not available for this article.
               </div>
               <div className="mt-3 text-center">
-                <button className="btn btn-primary me-2" onClick={() => fetchStotra()}>
+                <button className="btn btn-primary me-2" onClick={() => fetchArticle()}>
                   Retry
                 </button>
                 <button
                   className="btn btn-secondary"
-                  onClick={() => router.push(`/${locale}/stotras`)}
+                  onClick={() => router.push(`/${locale}/articles`)}
                 >
-                  Browse Stotras
+                  Browse Articles
                 </button>
               </div>
             </div>
@@ -333,33 +331,11 @@ export default function StotraPage() {
               </div>
             )}
 
-            {/* Stotra Content */}
-            {translation.stotra && (
-              <div className="mb-4">
-                <h2 className="h4 text-secondary mb-3">{t.stotra.stotra}</h2>
-                <div
-                  className="stotra-content"
-                  dangerouslySetInnerHTML={{ __html: translation.stotra }}
-                />
-              </div>
-            )}
-
-            {/* Stotra Meaning */}
-            {translation.stotraMeaning && (
-              <div className="mb-4">
-                <h2 className="h4 text-secondary mb-3">{t.stotra.stotra_meaning}</h2>
-                <div
-                  className="stotra-meaning"
-                  dangerouslySetInnerHTML={{ __html: translation.stotraMeaning }}
-                />
-              </div>
-            )}
-
-            {/* Additional Body Content (if available) */}
+            {/* Article Body Content */}
             {translation.body && (
               <div className="mb-4">
                 <div
-                  className="stotra-body"
+                  className="article-content"
                   dangerouslySetInnerHTML={{ __html: translation.body }}
                 />
               </div>
@@ -368,9 +344,9 @@ export default function StotraPage() {
             {/* Metadata */}
             <div className="border-top mt-5 pt-3">
               <small className="text-muted">
-                <strong>Available Languages:</strong> {stotra.meta.availableLanguages.join(', ')}
+                <strong>Available Languages:</strong> {article.meta.availableLanguages.join(', ')}
                 <br />
-                <strong>Canonical ID:</strong> {stotra.canonicalSlug}
+                <strong>Canonical ID:</strong> {article.canonicalSlug}
               </small>
             </div>
           </div>
