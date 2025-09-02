@@ -104,9 +104,26 @@ This export contains all the necessary data for a new developer to set up their 
 
 ## Import Instructions
 
-### 1. MongoDB Data Import
+### 1. Automated Import
 
-You can use the provided `import-data.sh` script which automates this process, or manually import:
+For an easier import process, use the provided `import-data.sh` script:
+
+```bash
+chmod +x import-data.sh
+./import-data.sh
+```
+
+This script will automatically handle:
+- MongoDB data import
+- Keycloak configuration setup
+- Redis data import (if available)
+- Configuration file setup
+
+### 2. Manual Import
+
+If you prefer to import manually:
+
+#### MongoDB Data Import
 
 ```bash
 # Start MongoDB container
@@ -126,31 +143,16 @@ docker exec ssbhakthi_mongodb mongorestore \
   /tmp/mongodump
 ```
 
-### 2. Automated Import
-
-For an easier import process, use the provided `import-data.sh` script:
-
-```bash
-chmod +x import-data.sh
-./import-data.sh
-```
-
-This script will automatically handle:
-- MongoDB data import
-- Keycloak configuration setup
-- Redis data import (if available)
-- Configuration file setup
-
 ### 3. Keycloak Setup
 
 The Keycloak realm configuration is in `keycloak/ssbhakthi-realm.json`. 
 When starting Keycloak, it will automatically import this realm.
 
-### 3. Redis Data
+### 4. Redis Data
 
 If a Redis dump exists, copy it to your Redis container's data directory.
 
-### 4. Environment Setup
+### 5. Environment Setup
 
 1. Copy `.env.example` to `.env` and adjust values as needed
 2. Use the provided docker-compose files to start services
@@ -166,6 +168,7 @@ If a Redis dump exists, copy it to your Redis container's data directory.
 - Make sure to change default passwords in production
 - Update URLs in configuration files to match your environment
 - Some data may need to be regenerated based on your specific setup
+- This export directory should not be committed to version control
 EOF
 
 echo "✅ README created successfully"

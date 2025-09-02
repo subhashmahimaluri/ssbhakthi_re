@@ -26,6 +26,8 @@ The export includes:
 - Redis data (if any)
 - Configuration files
 
+**Note:** The `export/` directory and generated `.tar.gz` files are automatically ignored by Git and should never be committed to the repository.
+
 ## Importing Data (For the New Developer)
 
 To import the data on a new machine:
@@ -48,15 +50,9 @@ To import the data on a new machine:
    ./import-data.sh
    ```
 
-4. Run the import script:
+4. Review and update the `.env` file with your specific configuration
 
-   ```bash
-   ./import-data.sh
-   ```
-
-5. Review and update the `.env` file with your specific configuration
-
-6. Start the services:
+5. Start the services:
    ```bash
    docker-compose up -d
    ```

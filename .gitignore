@@ -116,3 +116,8 @@ pids/
 
 # Monorepo specific
 .workspace/
+
+# Export files
+export/
+ssbhakthi-export-*.tar.gz
+ssbhakthi-export-*.zip
