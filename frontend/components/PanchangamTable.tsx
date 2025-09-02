@@ -154,21 +154,7 @@ export default function PanchangamTable({ date }: PanchangamProps) {
 
           // Add paksha information for tithi
           if (angaType === 'tithi' && calculated.Paksha) {
-            const pakshaName = calculated.Paksha.name_en_IN || '';
-            // Convert paksha names to translation keys
-            if (
-              pakshaName.toLowerCase().includes('sukla') ||
-              pakshaName.toLowerCase().includes('shukla')
-            ) {
-              angaEntry.paksha = 'sukla_paksha';
-            } else if (
-              pakshaName.toLowerCase().includes('krishna') ||
-              pakshaName.toLowerCase().includes('krsna')
-            ) {
-              angaEntry.paksha = 'krishna_paksha';
-            } else {
-              angaEntry.paksha = pakshaName;
-            }
+            angaEntry.paksha = calculated.Paksha.name_en_IN || '';
           }
 
           // Avoid duplicates by checking if we already have this exact anga
