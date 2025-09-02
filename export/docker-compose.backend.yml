@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: ssbhakthi_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: ssbhakthi_api
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./docker/mongo-init:/docker-entrypoint-initdb.d
+    networks:
+      - ssbhakthi_network
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: ssbhakthi_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass password123
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ssbhakthi_network
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: ssbhakthi_redis_commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379
+      REDIS_PASSWORD: password123
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - ssbhakthi_network
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: ssbhakthi_mongo_express
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password123
+      ME_CONFIG_MONGODB_URL: mongodb://admin:password123@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
+    ports:
+      - "8082:8081"
+    depends_on:
+      - mongodb
+    networks:
+      - ssbhakthi_network
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  ssbhakthi_network:
+    driver: bridge
