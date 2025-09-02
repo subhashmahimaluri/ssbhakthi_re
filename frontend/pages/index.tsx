@@ -4,6 +4,7 @@ import Layout from '@/components/Layout/Layout';
 import SearchBox from '@/components/Layout/SearchBox';
 import PanchangamTable from '@/components/PanchangamTable';
 import { useTranslation } from '@/hooks/useTranslation';
+import { getHomeMetaData } from '@/utils/seo';
 import { GetStaticProps } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -11,10 +12,11 @@ import React from 'react';
 import { Col, Row } from 'react-bootstrap';
 
 const HomePage: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
+  const { title, description } = getHomeMetaData(locale);
 
   return (
-    <Layout>
+    <Layout title={title} description={description}>
       <Row className="mt-25 py-5">
         <Col lg="5" md="12" className="my-5 py-5">
           <div className="right-container shadow-1 bg-white text-black">

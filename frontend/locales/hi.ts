@@ -188,4 +188,8 @@ export const hi = {
     chaturdashi: 'Chaturdashi',
     trayodashi: 'Trayodashi',
   },
+  stotra: {
+    stotra: 'स्तोत्र',
+    stotra_meaning: 'स्तोत्र का अर्थ',
+  },
 };
