@@ -74,6 +74,7 @@ const Avatar = ({ name, size = 40 }: { name: string; size?: number }) => {
 interface CommentItemProps {
   comment: Comment;
   currentUserId?: string;
+  currentUserEmail?: string; // Add email for ownership check
   authToken?: string;
   onCommentUpdated: () => void;
   onCommentDeleted: () => void;
@@ -83,6 +84,7 @@ interface CommentItemProps {
 const CommentItem = ({
   comment,
   currentUserId,
+  currentUserEmail,
   authToken,
   onCommentUpdated,
   onCommentDeleted,
@@ -95,8 +97,23 @@ const CommentItem = ({
   const [updateError, setUpdateError] = useState<string | null>(null);
   const editTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Check if current user owns this comment
-  const isOwner = currentUserId && comment.userId === currentUserId;
+  // Check if current user owns this comment (by userId or email)
+  const isOwnerByUserId = currentUserId && comment.userId === currentUserId;
+  const isOwnerByEmail =
+    currentUserEmail && comment.userEmail && comment.userEmail === currentUserEmail;
+  const isOwner = isOwnerByUserId || isOwnerByEmail;
+
+  // Debug logging for ownership check
+  console.log('🔍 Comment ownership check:', {
+    commentId: comment.id,
+    commentUserId: comment.userId,
+    commentUserEmail: comment.userEmail,
+    currentUserId: currentUserId,
+    currentUserEmail: currentUserEmail,
+    isOwnerByUserId,
+    isOwnerByEmail,
+    isOwner,
+  });
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -396,10 +413,18 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
   // Helper function to get current user ID from session
   const getCurrentUserId = (): string | undefined => {
     if (!session?.user) return undefined;
-    // In development, we use a consistent user ID
+
+    // In development, try to generate the same user ID as backend
     if (process.env.NODE_ENV === 'development') {
+      if (session.user.email) {
+        // Generate same ID format as backend: user-{email with @ and . replaced by -}
+        const userId = `user-${session.user.email.replace(/[@.]/g, '-')}`;
+        console.log('🆔 Frontend generated user ID:', userId, 'for email:', session.user.email);
+        return userId;
+      }
       return 'dev-user-123';
     }
+
     // In production, extract from JWT or session
     return (session as any).sub || (session as any).userId;
   };
@@ -941,6 +966,7 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
                   <CommentItem
                     comment={comment}
                     currentUserId={getCurrentUserId()}
+                    currentUserEmail={session?.user?.email || undefined}
                     authToken={session?.accessToken || 'dev-token-for-testing'}
                     onCommentUpdated={handleCommentUpdated}
                     onCommentDeleted={handleCommentDeleted}
