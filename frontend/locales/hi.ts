@@ -187,6 +187,7 @@ export const hi = {
     kalashtami: 'Kaalashtami',
     chaturdashi: 'Chaturdashi',
     trayodashi: 'Trayodashi',
+    location: 'जगह',
   },
   stotra: {
     stotra: 'स्तोत्र',

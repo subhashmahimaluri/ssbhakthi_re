@@ -184,6 +184,7 @@ export const kn = {
     kalashtami: 'ಕಾಲಾಷ್ಟಮಿ',
     chaturdashi: 'ಚತುರ್ಧಶಿ',
     trayodashi: 'ತ್ರಯೋದಶಿ',
+    location: 'ಸ್ಥಳ',
   },
   stotra: {
     stotra: 'ಸ್ತೋತ್ರ',

@@ -256,6 +256,7 @@ export const en = {
     tithi_list_desc:
       'List of all {{year}} {{tithiName}} dates and their exact start and end times for {{city}}, {{country}}.',
     tithi_list_month: '{{tithi}} in {{month}}',
+    location: 'Place',
   },
   stotra: {
     stotra: 'Stotra',
