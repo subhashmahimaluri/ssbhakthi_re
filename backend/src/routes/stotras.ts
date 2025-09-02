@@ -157,41 +157,4 @@ router.get('/:canonicalSlug', async (req: Request, res: Response): Promise<void>
   }
 });
 
-// GET /rest/stotras/slug/:slug - Find stotra by language-specific slug
-router.get('/slug/:slug', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { slug } = req.params;
-    const { lang = 'en' } = req.query;
-
-    const languageCode = getLanguageCode(lang as string);
-
-    // Find stotra by language-specific slug
-    const stotra = await Content.findOne({
-      [`translations.${languageCode}.slug`]: slug,
-      contentType: 'stotra',
-    }).lean();
-
-    if (!stotra) {
-      res.status(404).json({
-        error: {
-          message: `Stotra with ${languageCode} slug '${slug}' not found`,
-          code: 'NOT_FOUND',
-        },
-      });
-      return;
-    }
-
-    // Redirect to canonical URL
-    res.redirect(301, `/rest/stotras/${stotra.canonicalSlug}?lang=${languageCode}`);
-  } catch (error) {
-    console.error('Error finding stotra by slug:', error);
-    res.status(500).json({
-      error: {
-        message: 'Failed to find stotra',
-        code: 'INTERNAL_ERROR',
-      },
-    });
-  }
-});
-
 export default router;
