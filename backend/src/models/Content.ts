@@ -213,7 +213,7 @@ const ContentSchema = new Schema<IContent>(
 );
 
 // Indexes (these are handled by the setup script, but defined here for reference)
-ContentSchema.index({ canonicalSlug: 1 }, { unique: true });
+// Note: canonicalSlug index is created automatically due to unique: true in schema
 ContentSchema.index({ contentType: 1 });
 ContentSchema.index({ status: 1 });
 ContentSchema.index({ createdAt: -1 });

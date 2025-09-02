@@ -128,14 +128,16 @@ router.get('/:canonicalSlug', async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    // Return stotra with all translations but highlight requested language
+    // Return stotra with only the requested language translation (consistent with list endpoint)
     res.json({
       canonicalSlug: stotra.canonicalSlug,
       contentType: stotra.contentType,
       status: stotra.status,
       imageUrl: stotra.imageUrl,
       categories: stotra.categories,
-      translations: stotra.translations,
+      translations: {
+        [languageCode]: stotra.translations[languageCode],
+      },
       meta: {
         requestedLanguage: languageCode,
         availableLanguages: Object.keys(stotra.translations),

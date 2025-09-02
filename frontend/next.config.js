@@ -4,7 +4,7 @@ const nextConfig = {
   i18n: {
     locales: process.env.SUPPORTED_LOCALES?.split(',') || ['te', 'en'],
     defaultLocale: process.env.DEFAULT_LOCALE || 'te',
-    localeDetection: true, // Enable locale detection to handle language prefix
+    localeDetection: false, // Disable auto-detection for multi-instance setup
   },
   trailingSlash: false,
 

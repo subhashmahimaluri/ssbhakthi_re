@@ -185,4 +185,8 @@ export const kn = {
     chaturdashi: 'ಚತುರ್ಧಶಿ',
     trayodashi: 'ತ್ರಯೋದಶಿ',
   },
+  stotra: {
+    stotra: 'ಸ್ತೋತ್ರ',
+    stotra_meaning: 'ಸ್ತೋತ್ರದ ಅರ್ಥ',
+  },
 };

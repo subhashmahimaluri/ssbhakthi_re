@@ -1,3 +1,4 @@
+import cors from 'cors';
 import express, { Application } from 'express';
 import { requireAuth, requireRole } from './auth/jwt';
 import { appConfig } from './config/app';
@@ -35,6 +36,9 @@ class App {
   }
 
   private initializeMiddlewares(): void {
+    // CORS middleware
+    this.app.use(cors(appConfig.cors));
+
     // Body parsing middleware
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true }));
