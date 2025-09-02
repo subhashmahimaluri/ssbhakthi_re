@@ -255,6 +255,9 @@ export const te = {
       '{{city}}, {{country}} కోసం {{year}} లోని అన్ని {{tithiName}} తిథుల జాబితా మరియు వాటి ఖచ్చితమైన ప్రారంభ మరియు ముగింపు సమయాలు.',
     tithi_list_month: '{{month}} లో {{tithi}}',
     location: 'ప్రదేశం',
+    paksha: 'పక్షము',
+    dakshinayana: 'దక్షిణాయనం',
+    uttaraayana: 'ఉత్తరాయణం',
   },
   stotra: {
     stotra: 'స్తోత్రం',

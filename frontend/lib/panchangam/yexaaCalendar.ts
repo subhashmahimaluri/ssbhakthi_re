@@ -1,8 +1,8 @@
+import { getAyana, getDrikRitu, getTeluguYearName } from './getCalendarExtras';
+import { YexaaCalculateFunc } from './yexaaCalculateFunc';
 import { YexaaLocalConstant } from './yexaaLocalConstant';
 import { YexaaPanchangImpl } from './yexaaPanchangImpl';
 import { YexaaSunMoonTimer } from './yexaaSunMoonTimer';
-import { YexaaCalculateFunc } from './yexaaCalculateFunc';
-import { getAyana, getDrikRitu, getTeluguYearName } from './getCalendarExtras';
 
 export class YexaaCalendar {
   calendar(yexaaConstant: YexaaLocalConstant, dt: Date, lat: number, lng: number, height?: number) {
@@ -89,12 +89,36 @@ export class YexaaCalendar {
     Karna.name_en_IN = yexaaConstant.Karna.name_en_IN[nn_karana];
     Karna.ino = nn_karana;
     Masa.ino = nn_raasi - 1;
-    Masa.name = yexaaConstant.Masa.name[nn_raasi - 1];
-    Masa.name_en_IN = yexaaConstant.Masa.name_en_IN[nn_raasi - 1];
+
+    // Fix negative index issue for solar masa calculation
+    let solarMasaIndex = nn_raasi - 1;
+
+    // Handle negative indices by wrapping around (12 months)
+    if (solarMasaIndex < 0) {
+      solarMasaIndex += 12;
+    }
+
+    // Ensure index is within valid range (0-11)
+    solarMasaIndex = solarMasaIndex % 12;
+
+    Masa.name = yexaaConstant.Masa.name[solarMasaIndex] || '';
+    Masa.name_en_IN = yexaaConstant.Masa.name_en_IN[solarMasaIndex] || '';
     MoonMasa.ino = masa.n_maasa - 2;
     MoonMasa.isLeapMonth = masa.is_leap_month;
-    MoonMasa.name = yexaaConstant.Masa.name[masa.n_maasa - 2];
-    MoonMasa.name_en_IN = yexaaConstant.Masa.name_en_IN[masa.n_maasa - 2];
+
+    // Fix negative index issue for masa calculation
+    let moonMasaIndex = masa.n_maasa - 2;
+
+    // Handle negative indices by wrapping around (12 months)
+    if (moonMasaIndex < 0) {
+      moonMasaIndex += 12;
+    }
+
+    // Ensure index is within valid range (0-11)
+    moonMasaIndex = moonMasaIndex % 12;
+
+    MoonMasa.name = yexaaConstant.Masa.name[moonMasaIndex] || '';
+    MoonMasa.name_en_IN = yexaaConstant.Masa.name_en_IN[moonMasaIndex] || '';
     Ritu.ino = ritu;
     Ritu.name = yexaaConstant.Ritu.name[ritu];
     Ritu.name_en_UK = yexaaConstant.Ritu.name_en_UK[ritu];
