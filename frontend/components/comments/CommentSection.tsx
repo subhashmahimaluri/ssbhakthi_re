@@ -8,10 +8,12 @@ interface Comment {
   id: string;
   canonicalSlug: string;
   lang: string;
+  userId: string;
   userName: string;
   userEmail?: string;
   text: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 interface CommentSectionProps {
@@ -68,8 +70,34 @@ const Avatar = ({ name, size = 40 }: { name: string; size?: number }) => {
   );
 };
 
-// Individual comment component
-const CommentItem = ({ comment }: { comment: Comment }) => {
+// Individual comment component with edit/delete functionality
+interface CommentItemProps {
+  comment: Comment;
+  currentUserId?: string;
+  authToken?: string;
+  onCommentUpdated: () => void;
+  onCommentDeleted: () => void;
+  onRequestDelete: (comment: Comment) => void;
+}
+
+const CommentItem = ({
+  comment,
+  currentUserId,
+  authToken,
+  onCommentUpdated,
+  onCommentDeleted,
+  onRequestDelete,
+}: CommentItemProps) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(comment.text);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  const editTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Check if current user owns this comment
+  const isOwner = currentUserId && comment.userId === currentUserId;
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -81,19 +109,233 @@ const CommentItem = ({ comment }: { comment: Comment }) => {
     });
   };
 
+  // Handle edit mode activation
+  const handleEditClick = () => {
+    setIsEditing(true);
+    setEditText(comment.text);
+    setUpdateError(null);
+    // Focus textarea after a short delay
+    setTimeout(() => {
+      if (editTextareaRef.current) {
+        editTextareaRef.current.focus();
+        editTextareaRef.current.setSelectionRange(editText.length, editText.length);
+      }
+    }, 100);
+  };
+
+  // Handle edit cancellation
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditText(comment.text);
+    setUpdateError(null);
+  };
+
+  // Handle comment update
+  const handleUpdateComment = async () => {
+    if (!editText.trim() || editText === comment.text) {
+      handleCancelEdit();
+      return;
+    }
+
+    setIsUpdating(true);
+    setUpdateError(null);
+
+    try {
+      const token = authToken || 'dev-token-for-testing'; // Use passed token or fallback
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_REST_URL}/rest/comments/${comment.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ text: editText.trim() }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to update comment');
+      }
+
+      setIsEditing(false);
+      setUpdateError(null);
+      onCommentUpdated(); // Refresh comments list
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      setUpdateError(error instanceof Error ? error.message : 'Failed to update comment');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  // Handle delete button click (request delete from parent)
+  const handleDeleteClick = () => {
+    setUpdateError(null); // Clear any existing errors
+    onRequestDelete(comment);
+  };
+
   return (
     <div className="d-flex mb-4">
       <div className="me-3">
         <Avatar name={comment.userName} />
       </div>
       <div className="flex-grow-1">
-        <div className="card border-0 shadow-sm">
+        <div className={`card border-0 shadow-sm ${isEditing ? 'border-primary' : ''}`}>
           <div className="card-body">
             <div className="d-flex justify-content-between align-items-start mb-2">
-              <h6 className="fw-bold text-primary mb-0">{comment.userName}</h6>
-              <small className="text-muted">{formatDate(comment.createdAt)}</small>
+              <div className="d-flex align-items-center">
+                <h6 className="fw-bold text-primary mb-0 me-2">{comment.userName}</h6>
+                {comment.updatedAt && comment.updatedAt !== comment.createdAt && (
+                  <small className="text-muted">
+                    <i className="bi bi-pencil-square me-1"></i>
+                    edited
+                  </small>
+                )}
+              </div>
+              <div className="d-flex align-items-center">
+                <small className="text-muted me-2">{formatDate(comment.createdAt)}</small>
+
+                {/* Action buttons for comment owner */}
+                {isOwner && !isEditing && (
+                  <div className="dropdown">
+                    <button
+                      className="btn btn-sm btn-link text-muted comment-actions-menu p-0"
+                      type="button"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                      style={{ fontSize: '1rem' }}
+                    >
+                      <i className="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul className="dropdown-menu dropdown-menu-end">
+                      <li>
+                        <button
+                          className="dropdown-item d-flex align-items-center"
+                          onClick={handleEditClick}
+                        >
+                          <i className="bi bi-pencil-square text-primary me-2"></i>
+                          Edit
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          className="dropdown-item d-flex align-items-center text-danger"
+                          onClick={handleDeleteClick}
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? (
+                            <>
+                              <span className="spinner-border spinner-border-sm me-2"></span>
+                              Deleting...
+                            </>
+                          ) : (
+                            <>
+                              <i className="bi bi-trash text-danger me-2"></i>
+                              Delete
+                            </>
+                          )}
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                )}
+              </div>
             </div>
-            <p className="text-dark mb-0">{comment.text}</p>
+
+            {/* Comment content or edit form */}
+            {isEditing ? (
+              <div className="edit-form-container">
+                <div className="mb-3">
+                  <textarea
+                    ref={editTextareaRef}
+                    className="form-control"
+                    rows={3}
+                    value={editText}
+                    onChange={e => setEditText(e.target.value)}
+                    disabled={isUpdating}
+                    maxLength={1000}
+                    style={{
+                      resize: 'vertical',
+                      minHeight: '80px',
+                      transition: 'all 0.3s ease',
+                    }}
+                  />
+                  <small className="text-muted d-block mt-1">
+                    {editText.length}/1000 characters
+                    {editText.length > 800 && (
+                      <span className="text-warning ms-2">Approaching limit</span>
+                    )}
+                  </small>
+                </div>
+
+                {updateError && (
+                  <div className="alert alert-danger mb-3 py-2">
+                    <small>
+                      <i className="bi bi-exclamation-triangle me-1"></i>
+                      {updateError}
+                    </small>
+                  </div>
+                )}
+
+                <div className="d-flex gap-2">
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={handleUpdateComment}
+                    disabled={
+                      !editText.trim() ||
+                      editText === comment.text ||
+                      isUpdating ||
+                      editText.length > 1000
+                    }
+                  >
+                    {isUpdating ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-1"></span>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-check-lg me-1"></i>
+                        Save
+                      </>
+                    )}
+                  </button>
+                  <button
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={handleCancelEdit}
+                    disabled={isUpdating}
+                  >
+                    <i className="bi bi-x-lg me-1"></i>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="text-dark mb-0" style={{ whiteSpace: 'pre-wrap' }}>
+                  {comment.text}
+                </p>
+
+                {/* Show error for delete operations */}
+                {updateError && !isEditing && (
+                  <div className="alert alert-danger mt-3 py-2">
+                    <small>
+                      <i className="bi bi-exclamation-triangle me-1"></i>
+                      {updateError}
+                    </small>
+                    <button
+                      type="button"
+                      className="btn-close btn-close-sm float-end"
+                      onClick={() => setUpdateError(null)}
+                      style={{ fontSize: '0.75rem' }}
+                    ></button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -113,6 +355,11 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [submissionSuccess, setSubmissionSuccess] = useState<boolean>(false);
   const [totalComments, setTotalComments] = useState(0);
+
+  // Modal state management
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState<Comment | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Refs for smooth scrolling and animations
   const commentsListRef = useRef<HTMLDivElement>(null);
@@ -145,6 +392,69 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
       setIsLoadingComments(false);
     }
   }, [canonicalSlug, locale]);
+
+  // Helper function to get current user ID from session
+  const getCurrentUserId = (): string | undefined => {
+    if (!session?.user) return undefined;
+    // In development, we use a consistent user ID
+    if (process.env.NODE_ENV === 'development') {
+      return 'dev-user-123';
+    }
+    // In production, extract from JWT or session
+    return (session as any).sub || (session as any).userId;
+  };
+
+  // Callback for when a comment is updated
+  const handleCommentUpdated = useCallback(() => {
+    fetchComments();
+  }, [fetchComments]);
+
+  // Callback for when a comment is deleted
+  const handleCommentDeleted = useCallback(() => {
+    fetchComments();
+    setTotalComments(prev => Math.max(0, prev - 1));
+  }, [fetchComments]);
+
+  // Handle delete request from CommentItem
+  const handleDeleteRequest = useCallback((comment: Comment) => {
+    setCommentToDelete(comment);
+    setShowDeleteModal(true);
+  }, []);
+
+  // Handle actual comment deletion
+  const handleDeleteComment = useCallback(async () => {
+    if (!commentToDelete) return;
+
+    setIsDeleting(true);
+    setShowDeleteModal(false);
+
+    try {
+      const authToken = session?.accessToken || 'dev-token-for-testing';
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_REST_URL}/rest/comments/${commentToDelete.id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to delete comment');
+      }
+
+      handleCommentDeleted();
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      setCommentsError(error instanceof Error ? error.message : 'Failed to delete comment');
+    } finally {
+      setIsDeleting(false);
+      setCommentToDelete(null);
+    }
+  }, [commentToDelete, session?.accessToken, handleCommentDeleted]);
 
   // Load comments when component mounts or dependencies change
   useEffect(() => {
@@ -348,6 +658,73 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
           height: 100%;
           background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
           animation: shimmer 1.5s infinite;
+        }
+
+        /* Enhanced dropdown and modal styles */
+        .dropdown-menu {
+          z-index: 1050 !important;
+          box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+          border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .dropdown-toggle::after {
+          display: none !important;
+        }
+
+        .comment-item {
+          position: relative;
+          z-index: 1;
+        }
+
+        .comment-item .dropdown {
+          position: relative;
+          z-index: 100;
+        }
+
+        .comment-item .dropdown.show {
+          z-index: 1000;
+        }
+
+        .comment-item:hover {
+          z-index: 10;
+        }
+
+        .modal.show {
+          animation: modalFadeIn 0.3s ease-out;
+          z-index: 9999 !important;
+        }
+
+        @keyframes modalFadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        .modal-content {
+          animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+          from {
+            transform: translateY(-50px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+
+        .comment-actions-menu {
+          opacity: 0.7;
+          transition: opacity 0.2s ease;
+        }
+
+        .comment-item:hover .comment-actions-menu {
+          opacity: 1;
         }
       `}</style>
 
@@ -561,7 +938,14 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
                     transform: 'translateZ(0)', // Force hardware acceleration
                   }}
                 >
-                  <CommentItem comment={comment} />
+                  <CommentItem
+                    comment={comment}
+                    currentUserId={getCurrentUserId()}
+                    authToken={session?.accessToken || 'dev-token-for-testing'}
+                    onCommentUpdated={handleCommentUpdated}
+                    onCommentDeleted={handleCommentDeleted}
+                    onRequestDelete={handleDeleteRequest}
+                  />
                 </div>
               ))}
 
@@ -588,6 +972,105 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
             </div>
           )}
         </div>
+
+        {/* Global Delete Confirmation Modal */}
+        {showDeleteModal && commentToDelete && (
+          <div
+            className="modal fade show d-block"
+            tabIndex={-1}
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              zIndex: 9999,
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+            }}
+            onClick={e => {
+              if (e.target === e.currentTarget) {
+                setShowDeleteModal(false);
+                setCommentToDelete(null);
+              }
+            }}
+          >
+            <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: '400px' }}>
+              <div className="modal-content border-0 shadow-lg">
+                <div className="modal-header border-0 pb-0">
+                  <h5 className="modal-title text-danger d-flex align-items-center">
+                    <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                    Delete Comment
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setCommentToDelete(null);
+                    }}
+                    disabled={isDeleting}
+                  ></button>
+                </div>
+                <div className="modal-body pt-2">
+                  <p className="text-muted mb-1">Are you sure you want to delete this comment?</p>
+                  <div className="bg-light mt-3 rounded p-3">
+                    <small className="text-muted d-block mb-1">Your comment:</small>
+                    <p
+                      className="mb-0"
+                      style={{
+                        maxHeight: '80px',
+                        overflow: 'hidden',
+                        fontSize: '0.9rem',
+                      }}
+                    >
+                      {commentToDelete.text.length > 100
+                        ? commentToDelete.text.substring(0, 100) + '...'
+                        : commentToDelete.text}
+                    </p>
+                  </div>
+                  <div className="alert alert-warning mb-0 mt-3 py-2">
+                    <small>
+                      <i className="bi bi-info-circle me-1"></i>
+                      <strong>This action cannot be undone.</strong>
+                    </small>
+                  </div>
+                </div>
+                <div className="modal-footer border-0 pt-0">
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={() => {
+                      setShowDeleteModal(false);
+                      setCommentToDelete(null);
+                    }}
+                    disabled={isDeleting}
+                  >
+                    <i className="bi bi-x-lg me-1"></i>
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={handleDeleteComment}
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2"></span>
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-trash me-1"></i>
+                        Delete Comment
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
