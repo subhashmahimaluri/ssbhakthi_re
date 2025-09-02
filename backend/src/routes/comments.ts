@@ -1,5 +1,6 @@
 import { Request, Response, Router } from 'express';
 import rateLimit from 'express-rate-limit';
+import mongoose from 'mongoose';
 import { requireAuth } from '../auth/jwt';
 import { Comment, Content, LanguageCode } from '../models';
 
@@ -115,9 +116,9 @@ router.get('/:canonicalSlug', async (req: Request, res: Response): Promise<void>
         status: 'approved',
       };
 
-      // Execute query with pagination
+      // Execute query with pagination (without .lean() to get proper transformation)
       const [comments, total] = await Promise.all([
-        Comment.find(query).sort({ createdAt: -1 }).skip(offsetNum).limit(limitNum).lean(),
+        Comment.find(query).sort({ createdAt: -1 }).skip(offsetNum).limit(limitNum),
         Comment.countDocuments(query),
       ]);
 
@@ -127,7 +128,7 @@ router.get('/:canonicalSlug', async (req: Request, res: Response): Promise<void>
       });
 
       res.json({
-        items: comments,
+        items: comments, // Will automatically use toJSON transformation
         total,
         pagination: {
           limit: limitNum,
@@ -173,16 +174,16 @@ router.get('/:canonicalSlug', async (req: Request, res: Response): Promise<void>
       status: 'approved',
     };
 
-    // Execute query with pagination
+    // Execute query with pagination (without .lean() to get proper transformation)
     const [comments, total] = await Promise.all([
-      Comment.find(query).sort({ createdAt: -1 }).skip(offsetNum).limit(limitNum).lean(),
+      Comment.find(query).sort({ createdAt: -1 }).skip(offsetNum).limit(limitNum),
       Comment.countDocuments(query),
     ]);
 
     console.log('📊 Comments query results:', { foundComments: comments.length, total });
 
     res.json({
-      items: comments,
+      items: comments, // Will automatically use toJSON transformation
       total,
       pagination: {
         limit: limitNum,
@@ -385,5 +386,173 @@ router.post(
     }
   }
 );
+
+// PUT /rest/comments/:commentId - Update a comment
+router.put(
+  '/:commentId',
+  commentRateLimit,
+  requireAuth,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { commentId } = req.params;
+      const { text } = req.body;
+      const user = req.user!; // requireAuth ensures user exists
+
+      // Validate comment ID
+      if (!commentId || !mongoose.Types.ObjectId.isValid(commentId)) {
+        res.status(400).json({
+          error: {
+            message: 'Invalid comment ID',
+            code: 'INVALID_COMMENT_ID',
+          },
+        });
+        return;
+      }
+
+      // Validate text
+      if (!text || typeof text !== 'string') {
+        res.status(400).json({
+          error: {
+            message: 'Missing or invalid text field',
+            code: 'VALIDATION_ERROR',
+          },
+        });
+        return;
+      }
+
+      const trimmedText = text.trim();
+      if (trimmedText.length === 0 || trimmedText.length > 2000) {
+        res.status(400).json({
+          error: {
+            message: 'Comment text must be between 1 and 2000 characters',
+            code: 'INVALID_TEXT_LENGTH',
+          },
+        });
+        return;
+      }
+
+      // Sanitize text to prevent XSS and injection attacks
+      const sanitizedText = sanitizeText(trimmedText);
+      if (sanitizedText.length === 0) {
+        res.status(400).json({
+          error: {
+            message: 'Comment contains invalid content',
+            code: 'INVALID_CONTENT',
+          },
+        });
+        return;
+      }
+
+      // Find the comment
+      const comment = await Comment.findById(commentId);
+      if (!comment) {
+        res.status(404).json({
+          error: {
+            message: 'Comment not found',
+            code: 'COMMENT_NOT_FOUND',
+          },
+        });
+        return;
+      }
+
+      // Check if user owns the comment
+      if (comment.userId !== user.sub) {
+        res.status(403).json({
+          error: {
+            message: 'You can only edit your own comments',
+            code: 'UNAUTHORIZED_EDIT',
+          },
+        });
+        return;
+      }
+
+      // Update the comment
+      comment.text = sanitizedText;
+      comment.updatedAt = new Date();
+      const updatedComment = await comment.save();
+
+      console.log('✅ Comment updated successfully:', updatedComment.id);
+
+      res.json({
+        comment: updatedComment,
+        meta: {
+          action: 'updated',
+          commentId: updatedComment.id,
+        },
+      });
+    } catch (error) {
+      console.error('Error updating comment:', error);
+      res.status(500).json({
+        error: {
+          message: 'Failed to update comment',
+          code: 'INTERNAL_ERROR',
+        },
+      });
+    }
+  }
+);
+
+// DELETE /rest/comments/:commentId - Delete a comment
+router.delete('/:commentId', requireAuth, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { commentId } = req.params;
+    const user = req.user!; // requireAuth ensures user exists
+
+    // Validate comment ID
+    if (!commentId || !mongoose.Types.ObjectId.isValid(commentId)) {
+      res.status(400).json({
+        error: {
+          message: 'Invalid comment ID',
+          code: 'INVALID_COMMENT_ID',
+        },
+      });
+      return;
+    }
+
+    // Find the comment
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+      res.status(404).json({
+        error: {
+          message: 'Comment not found',
+          code: 'COMMENT_NOT_FOUND',
+        },
+      });
+      return;
+    }
+
+    // Check if user owns the comment
+    if (comment.userId !== user.sub) {
+      res.status(403).json({
+        error: {
+          message: 'You can only delete your own comments',
+          code: 'UNAUTHORIZED_DELETE',
+        },
+      });
+      return;
+    }
+
+    // Delete the comment
+    await Comment.findByIdAndDelete(commentId);
+
+    console.log('✅ Comment deleted successfully:', commentId);
+
+    res.json({
+      success: true,
+      meta: {
+        action: 'deleted',
+        commentId: commentId,
+      },
+    });
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    res.status(500).json({
+      error: {
+        message: 'Failed to delete comment',
+        code: 'INTERNAL_ERROR',
+      },
+    });
+  }
+});
 
 export default router;
