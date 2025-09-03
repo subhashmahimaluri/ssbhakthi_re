@@ -94,15 +94,5 @@ export function getTeluguYearName(gregorianYear: number): string {
   // Handle negative years (before 1867) by wrapping around
   const normalizedIndex = index < 0 ? index + 60 : index;
 
-  // Debug logging
-  if (process.env.NODE_ENV === 'development') {
-    console.log('getTeluguYearName Debug:', {
-      gregorianYear,
-      index,
-      normalizedIndex,
-      resultName: teluguYearNames[normalizedIndex],
-    });
-  }
-
   return teluguYearNames[normalizedIndex];
 }

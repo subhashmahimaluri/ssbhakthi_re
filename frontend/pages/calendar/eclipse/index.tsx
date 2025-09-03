@@ -95,7 +95,8 @@ export default function Eclipse() {
                 <h1 className="mb-0">Eclipses {year}</h1>
                 <small className="text-muted">
                   <i className="fas fa-map-marker-alt me-1"></i>
-                  Times shown for {city}, {country} ({timezone})
+                  Times shown for {city || 'Hyderabad'}, {country || 'India'} (
+                  {timezone || 'Asia/Calcutta'})
                 </small>
               </div>
               <div className="d-flex align-items-center gap-2">
@@ -191,7 +192,7 @@ export default function Eclipse() {
         <Col xl="4" lg="4" md="12" className="my-5 py-5">
           {/* Location Selection */}
           <div className="right-container shadow-1 mb-3 bg-white px-3 py-3 text-black">
-            <LocationAccordion city={city} country={country} />
+            <LocationAccordion city={city || 'Hyderabad'} country={country || 'India'} />
           </div>
           {/* Eclipse Detail Sidebar */}
           <div className="right-container shadow-1 mb-3 bg-white px-3 py-3 text-black">
@@ -213,7 +214,7 @@ export default function Eclipse() {
                   </div>
 
                   <div className="mb-3">
-                    <strong>Date & Time ({timezone}):</strong>
+                    <strong>Date & Time ({timezone || 'Asia/Calcutta'}):</strong>
                     <br />
                     {formatEclipseDateTime(selectedEclipse)}
                   </div>
@@ -233,10 +234,16 @@ export default function Eclipse() {
                     <strong>Location:</strong>
                     <br />
                     <i className="fas fa-map-marker-alt me-1"></i>
-                    {city}, {country}
+                    {city || 'Hyderabad'}, {country || 'India'}
                     <br />
                     <small className="text-muted">
-                      {eclipseCalc.getEclipseVisibilityInfo(selectedEclipse, lat, lng).note}
+                      {
+                        eclipseCalc.getEclipseVisibilityInfo(
+                          selectedEclipse,
+                          lat || 17.385044,
+                          lng || 78.486671
+                        ).note
+                      }
                     </small>
                   </div>
 

@@ -134,20 +134,6 @@ export class YexaaCalendar {
     // Calculate Telugu year based on Chaitra Shukla Padyami date for the year
     const teluguYear = this.getTeluguYearForDate(dt, lat, lng);
 
-    // Debug logging for Telugu year calculation
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Telugu Year Debug:', {
-        date: dt.toDateString(),
-        moonMasaIndex,
-        masaName: yexaaConstant.Masa.name[moonMasaIndex],
-        masaNameEn: yexaaConstant.Masa.name_en_IN[moonMasaIndex],
-        nn_tithi,
-        tithiName: yexaaConstant.Tithi.name[nn_tithi - 1],
-        tithiNameEn: yexaaConstant.Tithi.name_en_IN[nn_tithi - 1],
-        calculatedTeluguYear: teluguYear,
-      });
-    }
-
     return {
       Tithi,
       Paksha,
@@ -241,23 +227,6 @@ export class YexaaCalendar {
       }
     }
 
-    // Debug logging
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Telugu Year Calculation (Sunrise-based):', {
-        inputDate: date.toDateString(),
-        currentYear,
-        moonMasaIndex,
-        masaName: yexaaConstant.Masa.name_en_IN[moonMasaIndex],
-        nn_tithi,
-        tithiName: yexaaConstant.Tithi.name_en_IN[nn_tithi - 1],
-        isChaitraMasa,
-        isShuklaPackha,
-        isPadyami,
-        teluguCalendarYear,
-        resultYear: getTeluguYearName(teluguCalendarYear),
-      });
-    }
-
     return getTeluguYearName(teluguCalendarYear);
   }
 
@@ -300,12 +269,6 @@ export class YexaaCalendar {
         const isPadyami = nn_tithi === 1; // Padyami is the first tithi
 
         if (isChaitraMasa && isShuklaPackha && isPadyami) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log(
-              `Found Chaitra Shukla Padyami (Telugu New Year) for ${year}:`,
-              d.toDateString()
-            );
-          }
           return new Date(d);
         }
       } catch (error) {

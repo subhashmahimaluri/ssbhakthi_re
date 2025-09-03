@@ -432,9 +432,18 @@ export default function MonthlyCalendar() {
 
           <Row className="mt-5 py-2">
             <Col>
-              <h1 className="text-center">
+              {/* H2 Title like Festivals in September */}
+              {/* Festival List like below
+              03 Fri	చతుర్థి వ్రతం
+              05 Sun	స్కంద షష్టి */}
+            </Col>
+          </Row>
+
+          <Row className="mt-5 py-2">
+            <Col>
+              <h2 className="text-center">
                 {t.panchangam.tithi_list} {year}
-              </h1>
+              </h2>
               <p className="text-center">Complete list of Telugu Tithi dates and timing</p>
               <TithiList />
             </Col>
