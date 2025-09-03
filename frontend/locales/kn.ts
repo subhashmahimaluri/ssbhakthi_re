@@ -2,6 +2,7 @@
 export const kn = {
   panchangam: {
     panchang: 'ಪಂಚಾಂಗ',
+    tithi_list: 'Tithi List',
     january: 'ಜನವರಿ',
     february: 'ಫೆಬ್ರವರಿ',
     march: 'ಮಾರ್ಚ್',

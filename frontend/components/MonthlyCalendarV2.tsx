@@ -16,6 +16,7 @@ import {
 import { useEffect, useState } from 'react';
 import { Alert, Button, Col, Row, Spinner } from 'react-bootstrap';
 import LocationAccordion from './LocationAccordion';
+import TithiList from './TithiList';
 
 interface CalendarDay {
   date: Date;
@@ -201,11 +202,22 @@ export default function MonthlyCalendar() {
   const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const monthYear = format(currentDate, 'MMMM yyyy');
 
+  const year = new Date().getFullYear();
+
   return (
-    <Row className="monthly-calendar g-4">
+    <Row className="monthly-calendar g-4 mt-25 py-5">
       {/* Calendar Grid - Left Side */}
       <Col xl={8} lg={8} md={12}>
         <div className="calendar-grid rounded bg-white p-4 shadow">
+          <div className="mb-4 text-center">
+            <h1>
+              {(t.panchangam as any).calender || 'Telugu Panchangam Calendar'} {year}
+            </h1>
+            <p className="text-muted">
+              {(t.panchangam as any).calender_desc ||
+                'Monthly view of Telugu Panchangam with daily astronomical information'}
+            </p>
+          </div>
           {/* Navigation Header */}
           <div className="calendar-nav d-flex justify-content-between align-items-center mb-4 rounded p-3">
             <h2 className="calendar-title text-primary fw-bold mb-0">
@@ -338,6 +350,15 @@ export default function MonthlyCalendar() {
               ))}
             </div>
           )}
+          <Row className="mt-5 py-2">
+            <Col>
+              <h1 className="text-center">
+                {t.panchangam.tithi_list} {year}
+              </h1>
+              <p className="text-center">{t.panchangam.tithi_desc}</p>
+              <TithiList />
+            </Col>
+          </Row>
         </div>
       </Col>
 

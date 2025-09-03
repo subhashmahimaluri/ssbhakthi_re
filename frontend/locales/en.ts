@@ -2,7 +2,9 @@
 export const en = {
   panchangam: {
     calender: 'Hindu Calendar',
+    tithi_list: 'Tithi List',
     calender_desc: 'All Telugu tithi times, all festivals dates, Eclipse dates ... etc.',
+    tithi_desc: 'All Telugu tithi times',
     panchang: 'Panchang',
     january: 'January',
     february: 'February',

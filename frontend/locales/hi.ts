@@ -2,6 +2,7 @@
 export const hi = {
   panchangam: {
     panchang: 'Panchang',
+    tithi_list: 'Tithi List',
     january: 'January',
     february: 'February',
     march: 'March',
