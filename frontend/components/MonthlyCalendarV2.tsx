@@ -1,7 +1,9 @@
 import { useLocation } from '@/context/LocationContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { CalculatedFestival, calculateFestivalDates } from '@/lib/festivalData';
 import { ITRFCoord, moonRiseSet } from '@/lib/moonRiseSet';
 import { YexaaPanchang } from '@/lib/panchangam';
+import { CalculatedVrath, calculateVrathDates } from '@/lib/vrathData';
 import { formatTimeIST } from '@/utils/utils';
 import {
   addDays,
@@ -10,6 +12,7 @@ import {
   format,
   isSameDay,
   isSameMonth,
+  isWithinInterval,
   startOfMonth,
   subMonths,
 } from 'date-fns';
@@ -46,6 +49,14 @@ interface DayDetails {
   moon: any;
 }
 
+interface MonthlyEvent {
+  date: Date;
+  name: string;
+  nameTelugu: string;
+  type: 'festival' | 'vrath';
+  category: string;
+}
+
 export default function MonthlyCalendar() {
   const { t, locale } = useTranslation();
   const { lat, lng, city, country } = useLocation();
@@ -57,6 +68,8 @@ export default function MonthlyCalendar() {
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [festivals, setFestivals] = useState<CalculatedFestival[]>([]);
+  const [vraths, setVraths] = useState<CalculatedVrath[]>([]);
 
   // Create a single panchang instance to reuse
   const panchang = new YexaaPanchang();
@@ -189,6 +202,63 @@ export default function MonthlyCalendar() {
   const handleDateClick = (date: Date) => {
     setSelectedDate(date);
   };
+
+  // Get monthly events (festivals and vratams) for the current month
+  const getMonthlyEvents = (): MonthlyEvent[] => {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    const events: MonthlyEvent[] = [];
+
+    // Add festivals
+    festivals.forEach(festival => {
+      if (isWithinInterval(festival.gregorianDate, { start: monthStart, end: monthEnd })) {
+        events.push({
+          date: festival.gregorianDate,
+          name: festival.nameEnglish,
+          nameTelugu: festival.nameTelugu,
+          type: 'festival',
+          category: festival.category,
+        });
+      }
+    });
+
+    // Add vratams
+    vraths.forEach(vrath => {
+      vrath.upcomingOccurrences.forEach(occurrence => {
+        if (isWithinInterval(occurrence, { start: monthStart, end: monthEnd })) {
+          events.push({
+            date: occurrence,
+            name: vrath.nameEnglish,
+            nameTelugu: vrath.nameTelugu,
+            type: 'vrath',
+            category: vrath.category,
+          });
+        }
+      });
+    });
+
+    // Sort by date
+    return events.sort((a, b) => a.date.getTime() - b.date.getTime());
+  };
+
+  // Load festival and vrath data when year changes
+  useEffect(() => {
+    const currentYear = currentDate.getFullYear();
+    const validLat = lat || 17.385044; // Default to Hyderabad
+    const validLng = lng || 78.486671;
+
+    try {
+      const calculatedFestivals = calculateFestivalDates(currentYear, validLat, validLng);
+      setFestivals(calculatedFestivals);
+
+      const calculatedVraths = calculateVrathDates(currentYear, validLat, validLng);
+      setVraths(calculatedVraths);
+    } catch (err) {
+      console.error('Error loading festival/vrath data:', err);
+      setFestivals([]);
+      setVraths([]);
+    }
+  }, [currentDate, lat, lng]);
 
   // Load calendar data when month changes
   useEffect(() => {
@@ -430,12 +500,45 @@ export default function MonthlyCalendar() {
             )}
           </div>
 
-          <Row className="mt-5 py-2">
+          <Row className="mt-4">
             <Col>
-              {/* H2 Title like Festivals in September */}
-              {/* Festival List like below
-              03 Fri	చతుర్థి వ్రతం
-              05 Sun	స్కంద షష్టి */}
+              <h3 className="mb-3 text-center">
+                <i className="fas fa-calendar-check text-primary me-2"></i>
+                {locale === 'te'
+                  ? `${monthYearTelugu} పండుగలు మరియు వ్రతాలు`
+                  : `Festivals & Vratams in ${monthYear}`}
+              </h3>
+
+              {getMonthlyEvents().length === 0 ? (
+                <div className="text-muted py-4 text-center">
+                  <p>
+                    {locale === 'te'
+                      ? 'ఈ నెలలో పండుగలు లేదా వ్రతాలు లేవు'
+                      : 'No festivals or vratams this month'}
+                  </p>
+                </div>
+              ) : (
+                <div className="events-list">
+                  <ul className="festival-list">
+                    {getMonthlyEvents().map((event, index) => (
+                      <li key={index} className={`event-item ${event.type}`}>
+                        <span className="event-date">{format(event.date, 'dd EEE')}</span>
+                        <span className="separator"> - </span>
+                        <span className="event-name">
+                          {locale === 'te' ? event.nameTelugu : event.name}
+                        </span>
+                        <span className="event-type-icon">
+                          {event.type === 'festival' ? (
+                            <i className="fas fa-star text-warning ms-1"></i>
+                          ) : (
+                            <i className="fas fa-om text-success ms-1"></i>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </Col>
           </Row>
 
@@ -857,6 +960,38 @@ export default function MonthlyCalendar() {
           text-align: center;
         }
 
+        /* Festival List Styles */
+        .festival-list {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 0.5rem;
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+
+        .event-item {
+          padding: 0.5rem;
+          border-bottom: 1px solid #eee;
+        }
+
+        .event-item:last-child {
+          border-bottom: none;
+        }
+
+        .event-date {
+          font-weight: bold;
+          color: #007bff;
+        }
+
+        .event-name {
+          margin: 0 0.25rem;
+        }
+
+        .separator {
+          margin: 0 0.25rem;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
           .telugu-calendar td {
@@ -874,6 +1009,10 @@ export default function MonthlyCalendar() {
 
           .weekday {
             font-size: 12px;
+          }
+
+          .festival-list {
+            grid-template-columns: 1fr;
           }
         }
       `}</style>
