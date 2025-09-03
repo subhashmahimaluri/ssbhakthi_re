@@ -206,6 +206,10 @@ export default function EclipseYearPage({ year: initialYear }: EclipseYearPagePr
         </Col>
 
         <Col xl="4" lg="4" md="12" className="my-5 py-5">
+          {/* Location Selection */}
+          <div className="right-container shadow-1 mb-3 bg-white px-3 py-3 text-black">
+            <LocationAccordion city={city} country={country} />
+          </div>
           {/* Eclipse Detail Sidebar */}
           <div className="right-container shadow-1 mb-3 bg-white px-3 py-3 text-black">
             {selectedEclipse ? (
@@ -304,11 +308,6 @@ export default function EclipseYearPage({ year: initialYear }: EclipseYearPagePr
                 </div>
               </>
             )}
-          </div>
-
-          {/* Location Selection */}
-          <div className="right-container shadow-1 mb-3 bg-white px-3 py-3 text-black">
-            <LocationAccordion city={city} country={country} />
           </div>
 
           {/* Quick Navigation */}

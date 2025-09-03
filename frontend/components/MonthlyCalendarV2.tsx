@@ -24,11 +24,17 @@ interface CalendarDay {
   isPrevMonth: boolean;
   isNextMonth: boolean;
   isToday: boolean;
+  isSelected: boolean;
   panchangData: {
     sunrise: string;
     sunset: string;
     tithi: string;
+    tithiTelugu: string;
     nakshatra: string;
+    nakshatraTelugu: string;
+    tithiNumber: number;
+    paksha: string;
+    isFestival: boolean;
   };
 }
 
@@ -41,12 +47,12 @@ interface DayDetails {
 }
 
 export default function MonthlyCalendar() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { lat, lng, city, country } = useLocation();
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [calendarDays, setCalendarDays] = useState<CalendarDay[]>([]);
+  const [calendarDays, setCalendarDays] = useState<CalendarDay[][]>([]);
   const [dayDetails, setDayDetails] = useState<DayDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
@@ -65,11 +71,26 @@ export default function MonthlyCalendar() {
       const calculated = panchang.calculate(date);
       const sun = panchang.sunTimer(date, validLat, validLng);
 
+      // Get Telugu lunar day number (1-15 for each paksha)
+      const tithiNumber = ((calculated.Tithi?.ino || 0) % 15) + 1;
+      const paksha = calculated.Paksha?.name_en_IN || '';
+
+      // Check for special days/festivals
+      const isFestival =
+        calculated.Tithi?.name_en_IN === 'pournami' ||
+        calculated.Tithi?.name_en_IN === 'amavasya' ||
+        calculated.Tithi?.name_en_IN === 'ekadasi';
+
       return {
         sunrise: formatTimeIST(sun.sunRise) || '--:--',
         sunset: formatTimeIST(sun.sunSet) || '--:--',
         tithi: calculated.Tithi?.name_en_IN || '',
+        tithiTelugu: calculated.Tithi?.name || '',
         nakshatra: calculated.Nakshatra?.name_en_IN || '',
+        nakshatraTelugu: calculated.Nakshatra?.name || '',
+        tithiNumber,
+        paksha,
+        isFestival,
       };
     } catch (error) {
       console.error('Error calculating panchang for', date, error);
@@ -77,35 +98,51 @@ export default function MonthlyCalendar() {
         sunrise: '--:--',
         sunset: '--:--',
         tithi: '',
+        tithiTelugu: '',
         nakshatra: '',
+        nakshatraTelugu: '',
+        tithiNumber: 1,
+        paksha: '',
+        isFestival: false,
       };
     }
   };
 
-  // Generate calendar days for the month
-  const generateCalendarDays = (month: Date): CalendarDay[] => {
+  // Generate calendar days organized by weekday columns (vertical layout)
+  const generateCalendarDays = (month: Date): CalendarDay[][] => {
     const firstDay = startOfMonth(month);
     const lastDay = endOfMonth(month);
-    const startDay = addDays(firstDay, -firstDay.getDay()); // Start from Sunday
-    const endDay = addDays(startDay, 41); // 6 weeks × 7 days - 1
-
-    const days: CalendarDay[] = [];
     const today = new Date();
 
-    for (let date = new Date(startDay); date <= endDay; date = addDays(date, 1)) {
-      const currentDateCopy = new Date(date);
+    // Create 7 columns for each day of the week
+    const weekdayColumns: CalendarDay[][] = [[], [], [], [], [], [], []]; // Sun, Mon, Tue, Wed, Thu, Fri, Sat
 
-      days.push({
+    // Start from the beginning of the month and include previous/next month dates to fill columns
+    const startDate = addDays(firstDay, -firstDay.getDay()); // Start from Sunday of the first week
+    const endDate = addDays(startDate, 34); // 5 weeks × 7 days = 35 days total
+
+    for (let date = new Date(startDate); date <= endDate; date = addDays(date, 1)) {
+      const currentDateCopy = new Date(date);
+      const dayOfWeek = currentDateCopy.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      const isCurrentMonth = isSameMonth(currentDateCopy, month);
+      const isToday = isSameDay(currentDateCopy, today);
+      const isSelected = isSameDay(currentDateCopy, selectedDate);
+
+      const dayData: CalendarDay = {
         date: currentDateCopy,
-        isCurrentMonth: isSameMonth(currentDateCopy, month),
+        isCurrentMonth,
         isPrevMonth: currentDateCopy < firstDay,
         isNextMonth: currentDateCopy > lastDay,
-        isToday: isSameDay(currentDateCopy, today),
+        isToday,
+        isSelected,
         panchangData: calculateDayPanchang(currentDateCopy),
-      });
+      };
+
+      // Add to the appropriate weekday column
+      weekdayColumns[dayOfWeek].push(dayData);
     }
 
-    return days;
+    return weekdayColumns;
   };
 
   // Calculate detailed day information
@@ -199,8 +236,17 @@ export default function MonthlyCalendar() {
       });
   }, [selectedDate, lat, lng]);
 
-  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekdays = [
+    { en: 'Sun', te: 'ఆది' },
+    { en: 'Mon', te: 'సోమ' },
+    { en: 'Tue', te: 'మంగళ' },
+    { en: 'Wed', te: 'బుధ' },
+    { en: 'Thu', te: 'గురు' },
+    { en: 'Fri', te: 'శుక్ర' },
+    { en: 'Sat', te: 'శని' },
+  ];
   const monthYear = format(currentDate, 'MMMM yyyy');
+  const monthYearTelugu = `${(t.panchangam as any)[format(currentDate, 'MMMM').toLowerCase()] || format(currentDate, 'MMMM')} ${format(currentDate, 'yyyy')}`;
 
   const year = new Date().getFullYear();
 
@@ -220,10 +266,13 @@ export default function MonthlyCalendar() {
           </div>
           {/* Navigation Header */}
           <div className="calendar-nav d-flex justify-content-between align-items-center mb-4 rounded p-3">
-            <h2 className="calendar-title text-primary fw-bold mb-0">
-              <i className="fas fa-calendar-alt me-2"></i>
-              {monthYear}
-            </h2>
+            <div className="calendar-title">
+              <h2 className="text-primary fw-bold mb-0">
+                <i className="fas fa-calendar-alt me-2"></i>
+                {monthYear}
+              </h2>
+              <p className="text-muted small mb-0">{monthYearTelugu}</p>
+            </div>
             <div className="nav-buttons d-flex gap-2">
               <Button
                 variant="outline-primary"
@@ -256,106 +305,137 @@ export default function MonthlyCalendar() {
             </Alert>
           )}
 
-          {/* Calendar Header - Weekdays */}
-          <div className="calendar-header d-flex mb-2">
-            {weekdays.map(day => (
-              <div
-                key={day}
-                className="weekday-header fw-bold flex-fill bg-light border p-2 text-center"
-              >
-                {day}
+          {/* Traditional Vertical Column Calendar (Telugu Panchangam Style) */}
+          <div className="calendar-container">
+            {loading ? (
+              <div className="py-5 text-center">
+                <Spinner animation="border" />
+                <p className="mt-2">Loading calendar...</p>
               </div>
-            ))}
+            ) : (
+              <div className="calendar-table-responsive">
+                <table className="calendar-table telugu-calendar table-calendar vertical-calendar table">
+                  <tbody>
+                    {/* Weekday Header Row with Day Info */}
+                    <tr className="day calendar-heading">
+                      {weekdays.map((weekday, columnIndex) => (
+                        <td key={columnIndex}>
+                          <div className="weekdays">
+                            <span className="weekday">
+                              {locale === 'en' ? weekday.en : `${weekday.en}\n${weekday.te}`}
+                            </span>
+                            <div className="day-info">
+                              {/* Additional day info can be added here */}
+                            </div>
+                          </div>
+                        </td>
+                      ))}
+                    </tr>
+
+                    {/* Calendar Rows - Each row represents one week */}
+                    {calendarDays.length > 0 &&
+                      Array.from(
+                        { length: Math.max(...calendarDays.map(col => col.length)) },
+                        (_, rowIndex) => (
+                          <tr key={rowIndex}>
+                            {weekdays.map((weekday, columnIndex) => {
+                              const day = calendarDays[columnIndex]?.[rowIndex];
+
+                              if (!day) {
+                                return <td key={columnIndex} className="inactive-day"></td>;
+                              }
+
+                              // Generate cell classes based on day type
+                              const cellClasses = ['cal-day'];
+
+                              if (!day.isCurrentMonth) {
+                                cellClasses.push('inactive-day');
+                              }
+
+                              if (day.isToday) cellClasses.push('table-info');
+                              if (day.isSelected) cellClasses.push('table-primary');
+                              if (day.panchangData.isFestival) cellClasses.push('festival');
+
+                              return (
+                                <td
+                                  key={columnIndex}
+                                  className={cellClasses.join(' ')}
+                                  onClick={() => handleDateClick(day.date)}
+                                  role="button"
+                                  aria-haspopup="true"
+                                  data-day={format(day.date, 'd')}
+                                >
+                                  {/* Main Day Number */}
+                                  <div
+                                    className="main-day main-day-te"
+                                    data-week_en={weekday.en}
+                                    data-week_te={weekday.te}
+                                  >
+                                    <a href="#">{format(day.date, 'd')}</a>
+                                  </div>
+
+                                  {/* Day Information */}
+                                  <div className="day-info">
+                                    {/* Tithi */}
+                                    <span className="day-tithi">
+                                      {locale === 'en'
+                                        ? `${day.panchangData.paksha === 'shukla_paksha' ? 'S' : 'K'} ${day.panchangData.tithi || day.panchangData.tithiTelugu}`
+                                        : `${day.panchangData.paksha === 'shukla_paksha' ? 'షు' : 'బ'} ${day.panchangData.tithiTelugu}`}
+                                    </span>
+
+                                    {/* Telugu Lunar Day Number */}
+                                    <span className="sub-day">{day.panchangData.tithiNumber}</span>
+
+                                    {/* Nakshatra */}
+                                    <span className="day-nakshatra">
+                                      {locale === 'en'
+                                        ? day.panchangData.nakshatra
+                                        : day.panchangData.nakshatraTelugu}
+                                    </span>
+
+                                    {/* Sun Times */}
+                                    <span className="day-sun-times">
+                                      {locale === 'en'
+                                        ? `☀ ${day.panchangData.sunrise} | 🌙 ${day.panchangData.sunset}`
+                                        : `ఉ ${day.panchangData.sunrise} ల ${day.panchangData.sunset}`}
+                                    </span>
+
+                                    {/* Festival Indicator */}
+                                    {day.panchangData.isFestival && (
+                                      <span className="festival-indicator">
+                                        <i className="fas fa-star text-danger"></i>
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        )
+                      )}
+                  </tbody>
+
+                  {/* Footer with Legend */}
+                  <tfoot>
+                    <tr>
+                      <td className="tl pad" colSpan={7}>
+                        {locale === 'en'
+                          ? 'S - Shukla Paksha, K - Krishna Paksha, ☀ - Sunrise, 🌙 - Sunset'
+                          : 'దు - దుర్ముహూర్తము, వ - వర్జ్యము, షు - శుద్ధ పాడ్యమి, బ - బహుళ, ల - లగాయతు, తె - రేపటి, ఉ - ఉదయం, మ - మధ్యాహ్నం, సా - సాయంత్రం, రా - రాత్రి'}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
           </div>
 
-          {/* Calendar Body */}
-          {loading ? (
-            <div className="py-5 text-center">
-              <Spinner animation="border" />
-              <p className="mt-2">Loading calendar...</p>
-            </div>
-          ) : (
-            <div className="calendar-body">
-              {/* Render 6 weeks */}
-              {Array.from({ length: 6 }, (_, weekIndex) => (
-                <div key={weekIndex} className="calendar-week d-flex">
-                  {calendarDays.slice(weekIndex * 7, (weekIndex + 1) * 7).map((day, dayIndex) => (
-                    <div
-                      key={dayIndex}
-                      className={`calendar-day flex-fill position-relative d-flex flex-column cursor-pointer border ${
-                        day.isCurrentMonth
-                          ? 'current-month'
-                          : day.isPrevMonth
-                            ? 'prev-month'
-                            : 'next-month'
-                      } ${day.isToday ? 'today' : ''} ${isSameDay(day.date, selectedDate) ? 'selected' : ''}`}
-                      onClick={() => handleDateClick(day.date)}
-                      style={{ minHeight: '120px', cursor: 'pointer' }}
-                    >
-                      {/* Date Number */}
-                      <div className="date-number fw-bold mb-1 text-center">
-                        {format(day.date, 'd')}
-                      </div>
-
-                      {/* Panchangam Info */}
-                      <div className="panchang-info flex-grow-1 d-flex flex-column justify-content-between">
-                        {/* Sun Times */}
-                        <div className="sun-times mb-1">
-                          <div className="d-flex align-items-center justify-content-between">
-                            <span className="time-item">
-                              <i
-                                className="fas fa-sun text-warning"
-                                style={{ fontSize: '8px' }}
-                              ></i>
-                              <span className="time-text">{day.panchangData.sunrise}</span>
-                            </span>
-                            <span className="time-item">
-                              <i
-                                className="fas fa-moon text-secondary"
-                                style={{ fontSize: '8px' }}
-                              ></i>
-                              <span className="time-text">{day.panchangData.sunset}</span>
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Panchangam Details */}
-                        <div className="panchang-details">
-                          {day.panchangData.tithi && (
-                            <div className="detail-row">
-                              <i
-                                className="fas fa-calendar-alt text-primary"
-                                style={{ fontSize: '8px' }}
-                              ></i>
-                              <span className="detail-text">
-                                {(t.panchangam as any)[day.panchangData.tithi] ||
-                                  day.panchangData.tithi}
-                              </span>
-                            </div>
-                          )}
-                          {day.panchangData.nakshatra && (
-                            <div className="detail-row">
-                              <i className="fas fa-star text-info" style={{ fontSize: '8px' }}></i>
-                              <span className="detail-text">
-                                {(t.panchangam as any)[day.panchangData.nakshatra] ||
-                                  day.panchangData.nakshatra}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          )}
           <Row className="mt-5 py-2">
             <Col>
               <h1 className="text-center">
                 {t.panchangam.tithi_list} {year}
               </h1>
-              <p className="text-center">{t.panchangam.tithi_desc}</p>
+              <p className="text-center">Complete list of Telugu Tithi dates and timing</p>
               <TithiList />
             </Col>
           </Row>
@@ -369,9 +449,19 @@ export default function MonthlyCalendar() {
           <LocationAccordion city={city} country={country} />
         </div>
 
-        {/* Day Details */}
+        {/* Day Details Panel - Right Side */}
         <div className="day-details rounded bg-white p-3 shadow">
-          <h4 className="border-bottom mb-3 pb-2">{format(selectedDate, 'EEEE, MMMM d, yyyy')}</h4>
+          <div className="d-flex justify-content-between align-items-center border-bottom mb-3 pb-2">
+            <h4 className="mb-0">{format(selectedDate, 'EEEE, MMMM d, yyyy')}</h4>
+            {(dayDetails?.basic?.Tithi?.name_en_IN === 'pournami' ||
+              dayDetails?.basic?.Tithi?.name_en_IN === 'amavasya' ||
+              dayDetails?.basic?.Tithi?.name_en_IN === 'ekadasi') && (
+              <div className="festival-badge bg-warning text-dark small rounded px-2 py-1">
+                <i className="fas fa-star me-1"></i>
+                Special Day
+              </div>
+            )}
+          </div>
 
           {detailsLoading ? (
             <div className="py-4 text-center">
@@ -559,167 +649,223 @@ export default function MonthlyCalendar() {
       </Col>
 
       <style jsx>{`
-        .calendar-day {
-          transition: all 0.3s ease;
+        /* Traditional Vertical Column Calendar (Telugu Panchangam Style) */
+        .calendar-container {
+          border: 1px solid #dee2e6;
+          border-radius: 8px;
+          overflow: hidden;
+        }
+
+        .calendar-table-responsive {
+          overflow-x: auto;
+        }
+
+        .telugu-calendar {
+          width: 100%;
+          margin-bottom: 0;
+          border-collapse: collapse;
+        }
+
+        .telugu-calendar td {
+          vertical-align: top;
+          border: 1px solid #dee2e6;
           padding: 8px;
-          border: 1px solid #e9ecef !important;
-          position: relative;
+          min-height: 120px;
+          width: 14.28%; /* 100% / 7 columns */
         }
 
-        .calendar-day:hover {
-          background-color: #f8f9fa !important;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .calendar-day.current-month {
-          background-color: #ffffff;
-          color: #333;
-          border-color: #dee2e6 !important;
-        }
-
-        .calendar-day.prev-month,
-        .calendar-day.next-month {
-          background-color: #f8f9fa;
-          color: #6c757d;
-          opacity: 0.6;
-        }
-
-        .calendar-day.today {
-          background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-          border: 2px solid #f39c12 !important;
-          box-shadow: 0 0 10px rgba(243, 156, 18, 0.3);
-        }
-
-        .calendar-day.selected {
-          background: linear-gradient(135deg, #4dabf7 0%, #339af0 100%);
+        /* Weekday Header Row */
+        .calendar-heading td {
+          background: linear-gradient(135deg, #343a40 0%, #495057 100%);
           color: white;
-          border: 2px solid #228be6 !important;
-          box-shadow: 0 4px 12px rgba(52, 144, 220, 0.4);
-        }
-
-        .calendar-day.selected .text-muted {
-          color: #e3f2fd !important;
-        }
-
-        .date-number {
-          font-size: 20px;
-          font-weight: 700;
-          color: #495057;
           text-align: center;
+          padding: 12px 8px;
+          border-bottom: 2px solid #dee2e6;
+        }
+
+        .weekdays {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .weekday {
+          font-size: 14px;
+          font-weight: bold;
+          line-height: 1.2;
           margin-bottom: 4px;
         }
 
-        .calendar-day.today .date-number {
-          color: #e67e22;
-        }
-
-        .calendar-day.selected .date-number {
-          color: white;
-        }
-
-        .panchang-info {
+        .day-info {
           font-size: 10px;
-          line-height: 1.2;
+          margin-top: 8px;
+          opacity: 0.9;
         }
 
-        .time-item {
+        /* Calendar Day Cells */
+        .cal-day {
+          cursor: pointer;
+          transition: all 0.2s ease;
+          position: relative;
+          background-color: #ffffff;
+        }
+
+        .cal-day:hover {
+          background-color: #f8f9fa;
+          box-shadow: inset 0 0 0 2px #007bff;
+        }
+
+        /* Main Day Number */
+        .main-day {
+          margin-bottom: 8px;
+        }
+
+        .main-day a {
+          font-size: 24px;
+          font-weight: bold;
+          color: #000000;
+          text-decoration: none;
+          display: block;
+        }
+
+        .main-day a:hover {
+          color: #007bff;
+        }
+
+        /* Day Information Container */
+        .day-info {
           display: flex;
-          align-items: center;
-          gap: 2px;
+          flex-direction: column;
+          gap: 4px;
+          font-size: 10px;
         }
 
-        .time-text {
+        /* Tithi */
+        .day-tithi {
+          color: #dc3545;
+          font-weight: 500;
+          font-size: 10px;
+        }
+
+        /* Telugu Lunar Day Number */
+        .sub-day {
+          color: #dc3545;
+          font-weight: bold;
+          font-size: 12px;
+          text-align: right;
+          position: absolute;
+          top: 8px;
+          right: 8px;
+        }
+
+        /* Nakshatra */
+        .day-nakshatra {
+          color: #000000;
           font-size: 9px;
-          font-weight: 500;
-          color: #495057;
+          font-weight: 400;
         }
 
-        .calendar-day.selected .time-text {
-          color: #e3f2fd;
-        }
-
-        .detail-row {
-          display: flex;
-          align-items: center;
-          gap: 3px;
-          margin-bottom: 2px;
-          padding: 1px 0;
-        }
-
-        .detail-text {
+        /* Sun Times */
+        .day-sun-times {
+          color: #666666;
           font-size: 8px;
-          font-weight: 500;
-          color: #495057;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          flex: 1;
+          margin-top: 4px;
         }
 
-        .calendar-day.selected .detail-text {
-          color: #e3f2fd;
+        /* Festival Indicator */
+        .festival-indicator {
+          text-align: center;
+          margin-top: 4px;
         }
 
-        .calendar-grid {
-          border-radius: 12px;
-          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        .festival-indicator i {
+          font-size: 8px;
         }
 
-        .weekday-header {
-          background: linear-gradient(135deg, #495057 0%, #343a40 100%);
-          color: white;
-          border: 1px solid #dee2e6;
-          font-weight: 600;
-          padding: 12px 8px;
+        /* Calendar Day States */
+
+        /* Inactive days (previous/next month) */
+        .inactive-day {
+          background-color: #f8f9fa;
+          color: #cccccc;
+        }
+
+        .inactive-day .main-day a {
+          color: #cccccc;
+          font-weight: normal;
+        }
+
+        .inactive-day .day-tithi,
+        .inactive-day .day-nakshatra,
+        .inactive-day .day-sun-times,
+        .inactive-day .sub-day {
+          color: #cccccc;
+        }
+
+        /* Today - blue background */
+        .table-info {
+          background-color: #d1ecf1 !important;
+          border-color: #bee5eb !important;
+        }
+
+        .table-info .main-day a {
+          color: #0c5460 !important;
+          font-weight: bold;
+        }
+
+        /* Selected date - primary blue */
+        .table-primary {
+          background-color: #007bff !important;
+          color: white !important;
+          border-color: #0056b3 !important;
+        }
+
+        .table-primary .main-day a {
+          color: white !important;
+          font-weight: bold;
+        }
+
+        .table-primary .day-tithi,
+        .table-primary .day-nakshatra,
+        .table-primary .day-sun-times,
+        .table-primary .sub-day {
+          color: white !important;
+        }
+
+        /* Festival days */
+        .festival {
+          border-left: 4px solid #dc3545 !important;
+        }
+
+        /* Footer */
+        .tl.pad {
+          background-color: #f8f9fa;
+          border-top: 2px solid #dee2e6;
+          padding: 12px;
+          font-size: 11px;
+          color: #666666;
           text-align: center;
         }
 
-        .day-details {
-          border-radius: 12px;
-          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        }
+        /* Responsive Design */
+        @media (max-width: 768px) {
+          .telugu-calendar td {
+            padding: 4px;
+            min-height: 100px;
+          }
 
-        .cursor-pointer {
-          cursor: pointer;
-        }
+          .main-day a {
+            font-size: 20px;
+          }
 
-        .calendar-nav {
-          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-          border: 1px solid #e9ecef;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
+          .day-info {
+            font-size: 8px;
+          }
 
-        .calendar-title {
-          color: #495057;
-          font-size: 1.5rem;
-        }
-
-        .nav-btn {
-          border-radius: 8px;
-          font-weight: 500;
-          transition: all 0.3s ease;
-        }
-
-        .nav-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
-        }
-
-        .today-btn {
-          border-radius: 8px;
-          font-weight: 600;
-          background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-          border: none;
-          transition: all 0.3s ease;
-        }
-
-        .today-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
-          background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+          .weekday {
+            font-size: 12px;
+          }
         }
       `}</style>
     </Row>
