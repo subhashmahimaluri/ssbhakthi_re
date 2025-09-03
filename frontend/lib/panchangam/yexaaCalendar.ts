@@ -1,8 +1,8 @@
+import { getAyana, getDrikRitu, getTeluguYearName } from './getCalendarExtras';
+import { YexaaCalculateFunc } from './yexaaCalculateFunc';
 import { YexaaLocalConstant } from './yexaaLocalConstant';
 import { YexaaPanchangImpl } from './yexaaPanchangImpl';
 import { YexaaSunMoonTimer } from './yexaaSunMoonTimer';
-import { YexaaCalculateFunc } from './yexaaCalculateFunc';
-import { getAyana, getDrikRitu, getTeluguYearName } from './getCalendarExtras';
 
 export class YexaaCalendar {
   calendar(yexaaConstant: YexaaLocalConstant, dt: Date, lat: number, lng: number, height?: number) {
@@ -89,12 +89,36 @@ export class YexaaCalendar {
     Karna.name_en_IN = yexaaConstant.Karna.name_en_IN[nn_karana];
     Karna.ino = nn_karana;
     Masa.ino = nn_raasi - 1;
-    Masa.name = yexaaConstant.Masa.name[nn_raasi - 1];
-    Masa.name_en_IN = yexaaConstant.Masa.name_en_IN[nn_raasi - 1];
+
+    // Fix negative index issue for solar masa calculation
+    let solarMasaIndex = nn_raasi - 1;
+
+    // Handle negative indices by wrapping around (12 months)
+    if (solarMasaIndex < 0) {
+      solarMasaIndex += 12;
+    }
+
+    // Ensure index is within valid range (0-11)
+    solarMasaIndex = solarMasaIndex % 12;
+
+    Masa.name = yexaaConstant.Masa.name[solarMasaIndex] || '';
+    Masa.name_en_IN = yexaaConstant.Masa.name_en_IN[solarMasaIndex] || '';
     MoonMasa.ino = masa.n_maasa - 2;
     MoonMasa.isLeapMonth = masa.is_leap_month;
-    MoonMasa.name = yexaaConstant.Masa.name[masa.n_maasa - 2];
-    MoonMasa.name_en_IN = yexaaConstant.Masa.name_en_IN[masa.n_maasa - 2];
+
+    // Fix negative index issue for masa calculation
+    let moonMasaIndex = masa.n_maasa - 2;
+
+    // Handle negative indices by wrapping around (12 months)
+    if (moonMasaIndex < 0) {
+      moonMasaIndex += 12;
+    }
+
+    // Ensure index is within valid range (0-11)
+    moonMasaIndex = moonMasaIndex % 12;
+
+    MoonMasa.name = yexaaConstant.Masa.name[moonMasaIndex] || '';
+    MoonMasa.name_en_IN = yexaaConstant.Masa.name_en_IN[moonMasaIndex] || '';
     Ritu.ino = ritu;
     Ritu.name = yexaaConstant.Ritu.name[ritu];
     Ritu.name_en_UK = yexaaConstant.Ritu.name_en_UK[ritu];
@@ -103,13 +127,26 @@ export class YexaaCalendar {
       yexaaPanchangImpl.sun(sunRise) + ayanamsaAtRise
     );
 
-    const isNewTeluguYearStarted = MoonMasa.ino === 0 && Tithi.ino === 0;
-    const teluguYearIndex = this.getTeluguYearIndex(dt.getFullYear(), isNewTeluguYearStarted);
-
     // Get extras
     const ayana = getAyana(solarLongitude);
     const drikRitu = getDrikRitu(solarLongitude);
-    const teluguYear = getTeluguYearName(teluguYearIndex + 1);
+
+    // Calculate Telugu year based on Chaitra Shukla Padyami date for the year
+    const teluguYear = this.getTeluguYearForDate(dt, lat, lng);
+
+    // Debug logging for Telugu year calculation
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Telugu Year Debug:', {
+        date: dt.toDateString(),
+        moonMasaIndex,
+        masaName: yexaaConstant.Masa.name[moonMasaIndex],
+        masaNameEn: yexaaConstant.Masa.name_en_IN[moonMasaIndex],
+        nn_tithi,
+        tithiName: yexaaConstant.Tithi.name[nn_tithi - 1],
+        tithiNameEn: yexaaConstant.Tithi.name_en_IN[nn_tithi - 1],
+        calculatedTeluguYear: teluguYear,
+      });
+    }
 
     return {
       Tithi,
@@ -145,6 +182,146 @@ export class YexaaCalendar {
     const baseYear = 1867;
     const offset = isNewYearStarted ? 0 : -1;
     return (currentYear + offset - baseYear + 60) % 60;
+  }
+
+  /**
+   * Get Telugu year name for a given date using sunrise-based panchangam calculation
+   * @param date - The date to get Telugu year for
+   * @param lat - Latitude for sunrise calculation
+   * @param lng - Longitude for sunrise calculation
+   * @returns Telugu year name
+   */
+  getTeluguYearForDate(date: Date, lat: number = 17.385, lng: number = 78.4867): string {
+    const currentYear = date.getFullYear();
+
+    // Use the same sunrise-based approach as the main calendar method
+    const yexaaConstant = new YexaaLocalConstant();
+    const yexaaPanchangImpl = new YexaaPanchangImpl(yexaaConstant);
+    const yexaaSunMoonTimer = new YexaaSunMoonTimer();
+
+    // Get sunrise for the input date
+    const sunRise = yexaaSunMoonTimer.getSunRiseJd(date, lat, lng);
+    const nn_tithi = this.getCalendarTithi(sunRise, yexaaPanchangImpl);
+    const masa = this.getMasa(yexaaPanchangImpl, nn_tithi, sunRise);
+
+    // Fix negative index issue for masa calculation
+    let moonMasaIndex = masa.n_maasa - 2;
+    if (moonMasaIndex < 0) {
+      moonMasaIndex += 12;
+    }
+    moonMasaIndex = moonMasaIndex % 12;
+
+    // Check if today's sunrise shows Chaitra Shukla Padyami or later
+    const isChaitraMasa = moonMasaIndex === 11; // Chaitra is at index 11
+    const isShuklaPackha = nn_tithi >= 1 && nn_tithi <= 15; // Shukla paksha
+    const isPadyami = nn_tithi === 1; // Padyami is the first tithi
+
+    // Check if we're on or after the start of Telugu new year
+    let teluguCalendarYear;
+    if (isChaitraMasa && isShuklaPackha && isPadyami) {
+      // Today is exactly Chaitra Shukla Padyami - new year starts today
+      teluguCalendarYear = currentYear;
+    } else if (isChaitraMasa && isShuklaPackha && nn_tithi > 1) {
+      // We're in Chaitra Shukla but after Padyami - new year has already started
+      teluguCalendarYear = currentYear;
+    } else {
+      // Check if this year's Chaitra Shukla Padyami has already passed
+      const thisYearPadyami = this.findTeluguNewYearStart(currentYear);
+      const inputDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const padyamiDateOnly = new Date(
+        thisYearPadyami.getFullYear(),
+        thisYearPadyami.getMonth(),
+        thisYearPadyami.getDate()
+      );
+
+      if (inputDateOnly >= padyamiDateOnly) {
+        teluguCalendarYear = currentYear;
+      } else {
+        teluguCalendarYear = currentYear - 1;
+      }
+    }
+
+    // Debug logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Telugu Year Calculation (Sunrise-based):', {
+        inputDate: date.toDateString(),
+        currentYear,
+        moonMasaIndex,
+        masaName: yexaaConstant.Masa.name_en_IN[moonMasaIndex],
+        nn_tithi,
+        tithiName: yexaaConstant.Tithi.name_en_IN[nn_tithi - 1],
+        isChaitraMasa,
+        isShuklaPackha,
+        isPadyami,
+        teluguCalendarYear,
+        resultYear: getTeluguYearName(teluguCalendarYear),
+      });
+    }
+
+    return getTeluguYearName(teluguCalendarYear);
+  }
+
+  /**
+   * Find the date when Telugu New Year starts (Chaitra Shukla Padyami) for a given Gregorian year
+   * @param year - Gregorian year
+   * @returns Date object for Chaitra Shukla Padyami (Telugu New Year start)
+   */
+  findTeluguNewYearStart(year: number): Date {
+    // Search in March-May range for Chaitra Shukla Padyami
+    // Start from March 1st and check each day
+    const startDate = new Date(year, 2, 1); // March 1st
+    const endDate = new Date(year, 4, 31); // May 31st
+
+    const yexaaConstant = new YexaaLocalConstant();
+    const yexaaPanchangImpl = new YexaaPanchangImpl(yexaaConstant);
+    const yexaaCalculateFunc = new YexaaCalculateFunc();
+    const yexaaSunMoonTimer = new YexaaSunMoonTimer();
+
+    // Default coordinates (Hyderabad) if not specified
+    const lat = 17.385;
+    const lng = 78.4867;
+
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      try {
+        const sunRise = yexaaSunMoonTimer.getSunRiseJd(d, lat, lng);
+        const nn_tithi = this.getCalendarTithi(sunRise, yexaaPanchangImpl);
+        const masa = this.getMasa(yexaaPanchangImpl, nn_tithi, sunRise);
+
+        // Fix negative index issue for masa calculation
+        let moonMasaIndex = masa.n_maasa - 2;
+        if (moonMasaIndex < 0) {
+          moonMasaIndex += 12;
+        }
+        moonMasaIndex = moonMasaIndex % 12;
+
+        // Check if this is Chaitra Shukla Padyami (Telugu New Year)
+        const isChaitraMasa = moonMasaIndex === 11; // Chaitra is at index 11
+        const isShuklaPackha = nn_tithi >= 1 && nn_tithi <= 15; // Shukla paksha
+        const isPadyami = nn_tithi === 1; // Padyami is the first tithi
+
+        if (isChaitraMasa && isShuklaPackha && isPadyami) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log(
+              `Found Chaitra Shukla Padyami (Telugu New Year) for ${year}:`,
+              d.toDateString()
+            );
+          }
+          return new Date(d);
+        }
+      } catch (error) {
+        // Continue searching if there's an error with this date
+        continue;
+      }
+    }
+
+    // Fallback: if not found, estimate based on previous patterns
+    // Typically occurs in late March or early April
+    const fallbackDate = new Date(year, 2, 30); // March 30th as fallback
+    console.warn(
+      `Could not find Chaitra Shukla Padyami for ${year}, using fallback:`,
+      fallbackDate.toDateString()
+    );
+    return fallbackDate;
   }
 
   // get tithi in (1-15) Sukla and (16-30) Krushna

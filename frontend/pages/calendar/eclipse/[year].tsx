@@ -3,16 +3,21 @@ import LocationAccordion from '@/components/LocationAccordion';
 import { useLocation } from '@/context/LocationContext';
 import { useTranslation } from '@/hooks/useTranslation';
 import { EclipseEvent, YexaaEclipse } from '@/lib/eclipse';
+import { GetServerSideProps } from 'next';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { Alert, Badge, Button, Card, Col, Row, Spinner } from 'react-bootstrap';
 
-export default function Eclipse() {
+interface EclipseYearPageProps {
+  year: number;
+}
+
+export default function EclipseYearPage({ year: initialYear }: EclipseYearPageProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const { city, country, timezone, lat, lng } = useLocation();
-  const defaultYear = 2025; // Default to 2025 instead of current year
-  const [year, setYear] = useState(defaultYear);
+  const currentYear = new Date().getFullYear();
+  const [year, setYear] = useState(initialYear);
   const [eclipses, setEclipses] = useState<EclipseEvent[]>([]);
   const [selectedEclipse, setSelectedEclipse] = useState<EclipseEvent | null>(null);
   const [loading, setLoading] = useState(false);
@@ -22,8 +27,20 @@ export default function Eclipse() {
 
   // Load eclipses for the selected year
   useEffect(() => {
-    loadEclipses(year);
+    if (year) {
+      loadEclipses(year);
+    }
   }, [year]);
+
+  // Update year when route changes
+  useEffect(() => {
+    if (router.query.year && typeof router.query.year === 'string') {
+      const routeYear = parseInt(router.query.year);
+      if (!isNaN(routeYear) && routeYear !== year) {
+        setYear(routeYear);
+      }
+    }
+  }, [router.query.year]);
 
   const loadEclipses = async (selectedYear: number) => {
     setLoading(true);
@@ -42,7 +59,7 @@ export default function Eclipse() {
 
   const handleYearChange = (newYear: number) => {
     if (newYear >= 1900 && newYear <= 2100) {
-      // Navigate to year-specific URL
+      // Navigate to new URL
       router.push(`/calendar/eclipse/${newYear}`);
     }
   };
@@ -241,6 +258,12 @@ export default function Eclipse() {
                     <br />
                     {selectedEclipse.kind === 'solar' ? 'Solar Eclipse' : 'Lunar Eclipse'}
                   </div>
+
+                  <div className="mb-3">
+                    <strong>Eclipse ID:</strong>
+                    <br />
+                    <small className="text-muted font-monospace">{selectedEclipse.id}</small>
+                  </div>
                 </div>
               </>
             ) : (
@@ -292,7 +315,7 @@ export default function Eclipse() {
           <div className="right-container shadow-1 mb-3 bg-white px-3 py-3 text-black">
             <h4>Quick Navigation</h4>
             <div className="d-flex flex-wrap gap-2">
-              {[2024, 2025, 2026].map(quickYear => (
+              {[currentYear - 1, currentYear, currentYear + 1].map(quickYear => (
                 <Button
                   key={quickYear}
                   variant={year === quickYear ? 'primary' : 'outline-primary'}
@@ -318,3 +341,21 @@ export default function Eclipse() {
     </Layout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async context => {
+  const { year } = context.params!;
+  const parsedYear = parseInt(year as string);
+
+  // Validate year
+  if (isNaN(parsedYear) || parsedYear < 1900 || parsedYear > 2100) {
+    return {
+      notFound: true,
+    };
+  }
+
+  return {
+    props: {
+      year: parsedYear,
+    },
+  };
+};
