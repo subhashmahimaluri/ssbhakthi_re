@@ -3,6 +3,7 @@
 import Layout from '@/components/Layout/Layout';
 import SearchBox from '@/components/Layout/SearchBox';
 import PanchangamTable from '@/components/PanchangamTable';
+import UpcomingEvents from '@/components/UpcomingEvents';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getHomeMetaData } from '@/utils/seo';
 import { GetStaticProps } from 'next';
@@ -11,9 +12,13 @@ import Link from 'next/link';
 import React from 'react';
 import { Col, Row } from 'react-bootstrap';
 
+// UpcomingEvent interface moved to UpcomingEvents component
+
 const HomePage: React.FC = () => {
   const { t, locale } = useTranslation();
   const { title, description } = getHomeMetaData(locale);
+
+  // Upcoming events logic moved to UpcomingEvents component
 
   return (
     <Layout title={title} description={description}>
@@ -22,6 +27,12 @@ const HomePage: React.FC = () => {
           <div className="right-container shadow-1 bg-white text-black">
             <SearchBox inputWidth={100} selectWidth={100} btnWidth={100} />
           </div>
+
+          {/* Upcoming Festivals and Vraths Section */}
+          <div className="right-container shadow-1 mt-4 bg-white text-black">
+            <UpcomingEvents />
+          </div>
+
           <div className="right-container shadow-1 mt-4 bg-white text-black">
             <div className="download-block shadow-1 mb-3 mt-3 bg-white px-5 py-3">
               <p className="download-title gr-text-11 text-color-opacity mb-2">Download Our App</p>
@@ -55,7 +66,7 @@ const HomePage: React.FC = () => {
         </Col>
         <Col lg="7" md="12" className="my-5 py-5">
           <div className="left-container shadow-1 panchangam-block bg-white">
-            <PanchangamTable />
+            <PanchangamTable showViewMore={true} />
           </div>
         </Col>
       </Row>

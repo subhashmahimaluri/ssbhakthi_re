@@ -2,7 +2,6 @@
 
 import { signIn, signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { Dropdown } from 'react-bootstrap';
 
 export default function MyAccount() {
   const { data: session, status } = useSession();
@@ -37,62 +36,30 @@ export default function MyAccount() {
       </div>
     );
   }
-
-  // Show authenticated state
-  if (session) {
-    const userRoles = session.user.roles || [];
-    const hasAdminAccess = userRoles.some(role => ['admin', 'editor', 'author'].includes(role));
-
-    return (
-      <div className="my-account">
-        <Dropdown align="end">
-          <Dropdown.Toggle
-            variant="link"
-            className="text-decoration-none gr-text-10 gr-text-color gr-hover-text-orange"
-            style={{ border: 'none', background: 'none', padding: '0.25rem' }}
-          >
-            {session.user.name || 'Account'} ▼
-          </Dropdown.Toggle>
-
-          <Dropdown.Menu>
-            <Dropdown.ItemText>
-              <small className="text-muted">Roles: {userRoles.join(', ') || 'User'}</small>
-            </Dropdown.ItemText>
-            <Dropdown.Divider />
-
-            <Dropdown.Item as={Link} href="/my-account">
-              My Account
-            </Dropdown.Item>
-
-            {hasAdminAccess && (
-              <>
-                <Dropdown.Item as={Link} href="/admin">
-                  Admin Panel
-                </Dropdown.Item>
-              </>
-            )}
-
-            <Dropdown.Divider />
-
-            <Dropdown.Item href="#" onClick={handleSignOut}>
-              Sign Out
-            </Dropdown.Item>
-          </Dropdown.Menu>
-        </Dropdown>
-      </div>
-    );
-  }
-
   // Show unauthenticated state
   return (
     <div className="my-account">
-      <ul className="account-menu gr-text-10 gr-text-color gr-hover-text-orange contact mb-1 mt-1 py-1">
-        <li>
-          <a href="#" onClick={handleSignIn}>
+      {session ? (
+        <div className="account-menu gr-text-6 gr-text-color contact mb-1 mt-1 py-1">
+          <Link href="/my-account" className="gr-hover-text-orange fw-bold gr-text-6 text-black">
+            My Account
+          </Link>
+          <span className="mx-2">|</span>
+          <Link
+            href="#"
+            className="gr-hover-text-orange fw-bold gr-text-color text-black"
+            onClick={handleSignOut}
+          >
+            Sign Out
+          </Link>
+        </div>
+      ) : (
+        <div className="account-menu gr-text-color contact mb-1 mt-1 py-1">
+          <Link href="#" className="gr-hover-text-orange fw-bold text-black" onClick={handleSignIn}>
             Sign In
-          </a>
-        </li>
-      </ul>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

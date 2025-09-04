@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Badge, Button, Collapse } from 'react-bootstrap';
 import imgSprite from '../assets/images/icons/panchangam_sprite.png';
+import { abhijitMuhurth, brahmaMuhurtham, getRahuKalam, pradoshaTime } from '../lib/goodBadTime';
 import { YexaaPanchang } from '../lib/panchangam';
 import AutoComplete from './AutoComplete';
 import PanchangSlide from './PanchangSlide';
@@ -44,10 +45,12 @@ interface SelectedLocationData {
 
 interface PanchangamProps {
   date?: string | Date;
+  showViewMore?: boolean;
 }
 
-export default function PanchangamTable({ date }: PanchangamProps) {
+export default function PanchangamTable({ date, showViewMore = false }: PanchangamProps) {
   const [openCollapse, setOpenCollapse] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<SelectedLocationData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitProgress, setSubmitProgress] = useState(0);
@@ -115,7 +118,11 @@ export default function PanchangamTable({ date }: PanchangamProps) {
   };
 
   // Helper function to calculate all angas for the day according to Telugu Panchangam rules
-  const getDayAngas = (entries: AngaEntry[], sunRise: Date): DisplayAnga[] => {
+  const getDayAngas = (
+    entries: AngaEntry[],
+    sunRise: Date,
+    angaType: 'tithi' | 'nakshatra' | 'yoga' | 'karana'
+  ): DisplayAnga[] => {
     const nextSunrise = new Date(sunRise.getTime() + 24 * 60 * 60 * 1000);
     const results: DisplayAnga[] = [];
 
@@ -131,17 +138,19 @@ export default function PanchangamTable({ date }: PanchangamProps) {
       let tag = '';
       let time = `${formatToDateTimeIST(start)} – ${formatToDateTimeIST(end)}`;
 
-      // Apply Telugu Panchangam rules
-      if (start > sunRise && end < nextSunrise) {
-        // Anga begins and ends between two sunrises
-        tag = ' [Kshaya]';
-      } else if (start < sunRise && end > nextSunrise) {
-        // Anga spans across two consecutive sunrises
-        tag = ' [Vriddhi]';
-      } else if (end.getTime() === sunRise.getTime()) {
-        // Anga ends exactly at sunrise - next anga is official (normal case, no tag)
-        // This anga should not be displayed as it's not the day's main anga
-        continue;
+      // Apply Telugu Panchangam rules - only for Tithi entries
+      if (angaType === 'tithi') {
+        if (start > sunRise && end < nextSunrise) {
+          // Anga begins and ends between two sunrises
+          tag = ' [Kshaya]';
+        } else if (start < sunRise && end > nextSunrise) {
+          // Anga spans across two consecutive sunrises
+          tag = ' [Vriddhi]';
+        } else if (end.getTime() === sunRise.getTime()) {
+          // Anga ends exactly at sunrise - next anga is official (normal case, no tag)
+          // This anga should not be displayed as it's not the day's main anga
+          continue;
+        }
       }
       // else: normal display (anga present at sunrise)
 
@@ -267,19 +276,19 @@ export default function PanchangamTable({ date }: PanchangamProps) {
       const sunriseTime = getSunriseDate(panchangamDate, lat, lng);
 
       const allTithis = getAllAngasForDay(panchangamDate, lat, lng, 'tithi');
-      const dayTithis = getDayAngas(allTithis, sunriseTime);
+      const dayTithis = getDayAngas(allTithis, sunriseTime, 'tithi');
       setDisplayTithis(dayTithis);
 
       const allNakshatras = getAllAngasForDay(panchangamDate, lat, lng, 'nakshatra');
-      const dayNakshatras = getDayAngas(allNakshatras, sunriseTime);
+      const dayNakshatras = getDayAngas(allNakshatras, sunriseTime, 'nakshatra');
       setDisplayNakshatras(dayNakshatras);
 
       const allYogas = getAllAngasForDay(panchangamDate, lat, lng, 'yoga');
-      const dayYogas = getDayAngas(allYogas, sunriseTime);
+      const dayYogas = getDayAngas(allYogas, sunriseTime, 'yoga');
       setDisplayYogas(dayYogas);
 
       const allKaranas = getAllAngasForDay(panchangamDate, lat, lng, 'karana');
-      const dayKaranas = getDayAngas(allKaranas, sunriseTime);
+      const dayKaranas = getDayAngas(allKaranas, sunriseTime, 'karana');
       setDisplayKaranas(dayKaranas);
     } catch (err) {
       console.error('Error calculating Panchangam:', err);
@@ -630,247 +639,412 @@ export default function PanchangamTable({ date }: PanchangamProps) {
           panchangamData.yoga,
           panchangamData.yogaTime
         )}
-        <div className="panchang-date">
-          <h4 className="gr-text-6 text-black">{t.panchangam.sun_moon_time}</h4>
-          <ul className="list-unstyled gr-text-8">
-            <li>
-              <span className="fw-bold">{t.panchangam.sunrise}</span> :{' '}
-              {formatTimeIST(sunTime.sunRise)}
-            </li>
-            <li>
-              <span className="fw-bold">{t.panchangam.sunset}</span> :{' '}
-              {formatTimeIST(sunTime.sunSet)}
-            </li>
-            <li>
-              <span className="fw-bold">{t.panchangam.moonrise}</span> :{' '}
-              {formatTimeIST(moonTime.rise)}
-            </li>
-            <li>
-              <span className="fw-bold">{t.panchangam.moonset}</span> :{' '}
-              {formatTimeIST(moonTime.set)}
-            </li>
-          </ul>
-        </div>
+        {showViewMore && !isExpanded && (
+          <div className="mt-3 text-center">
+            <Button
+              className="gr-hover-y gr-text-9 btn btn btn-primary mx-auto py-2"
+              size="sm"
+              onClick={() => setIsExpanded(true)}
+            >
+              {'View More'}
+            </Button>
+          </div>
+        )}
+        {(!showViewMore || isExpanded) && (
+          <>
+            {/* Inauspicious Period */}
+            <div className="panchang-date">
+              <h4 className="gr-text-6 text-black">{t.panchangam.inauspicious_period}</h4>
+              <ul className="list-unstyled gr-text-8 border-bottom pb-4">
+                {sunTime.sunRise &&
+                  sunTime.sunSet &&
+                  (() => {
+                    try {
+                      const rahuKalamTimes = getRahuKalam(
+                        formatTimeIST(sunTime.sunRise),
+                        formatTimeIST(sunTime.sunSet),
+                        format(panchangamDate, 'EEEE') as any
+                      );
+                      return (
+                        <>
+                          <li>
+                            <span className="fw-bold">{t.panchangam.rahu}</span> :{' '}
+                            {rahuKalamTimes.rahu}
+                          </li>
+                          <li>
+                            <span className="fw-bold">{t.panchangam.gulika}</span> :{' '}
+                            {rahuKalamTimes.gulika}
+                          </li>
+                          <li>
+                            <span className="fw-bold">{t.panchangam.yamaganda}</span> :{' '}
+                            {rahuKalamTimes.yamaganda}
+                          </li>
+                        </>
+                      );
+                    } catch (error) {
+                      console.error('Error calculating Rahu Kalam:', error);
+                      return (
+                        <>
+                          <li>
+                            <span className="fw-bold">{t.panchangam.rahu}</span> : N/A
+                          </li>
+                          <li>
+                            <span className="fw-bold">{t.panchangam.gulika}</span> : N/A
+                          </li>
+                          <li>
+                            <span className="fw-bold">{t.panchangam.yamaganda}</span> : N/A
+                          </li>
+                        </>
+                      );
+                    }
+                  })()}
+              </ul>
+            </div>
+            {/* Auspicious Period */}
+            <div className="panchang-date">
+              <h4 className="gr-text-6 text-black">{t.panchangam.auspicious_period}</h4>
+              <ul className="list-unstyled gr-text-8 border-bottom pb-4">
+                {sunTime.sunRise && sunTime.sunSet && (
+                  <>
+                    <li>
+                      <span className="fw-bold">{t.panchangam.abhijit_muhurat}</span> :{' '}
+                      {(() => {
+                        try {
+                          return abhijitMuhurth(
+                            formatTimeIST(sunTime.sunRise),
+                            formatTimeIST(sunTime.sunSet)
+                          );
+                        } catch (error) {
+                          console.error('Error calculating Abhijit Muhurth:', error);
+                          return 'N/A';
+                        }
+                      })()}
+                    </li>
+                    <li>
+                      <span className="fw-bold">{t.panchangam.brahma_muhurat}</span> :{' '}
+                      {(() => {
+                        try {
+                          return brahmaMuhurtham(formatTimeIST(sunTime.sunRise));
+                        } catch (error) {
+                          console.error('Error calculating Brahma Muhurth:', error);
+                          return 'N/A';
+                        }
+                      })()}
+                    </li>
+                    <li>
+                      <span className="fw-bold">{t.panchangam.pradosha_time}</span> :{' '}
+                      {(() => {
+                        try {
+                          return pradoshaTime(
+                            formatTimeIST(sunTime.sunSet),
+                            formatTimeIST(addDays(sunTime.sunRise || new Date(), 1))
+                          );
+                        } catch (error) {
+                          console.error('Error calculating Pradosha Time:', error);
+                          return 'N/A';
+                        }
+                      })()}
+                    </li>
+                  </>
+                )}
+              </ul>
+            </div>
+            <div className="panchang-date">
+              <h4 className="gr-text-6 text-black">{t.panchangam.sun_moon_time}</h4>
+              <ul className="list-unstyled gr-text-8">
+                <li>
+                  <span className="fw-bold">{t.panchangam.sunrise}</span> :{' '}
+                  {formatTimeIST(sunTime.sunRise)}
+                </li>
+                <li>
+                  <span className="fw-bold">{t.panchangam.sunset}</span> :{' '}
+                  {formatTimeIST(sunTime.sunSet)}
+                </li>
+                <li>
+                  <span className="fw-bold">{t.panchangam.moonrise}</span> :{' '}
+                  {formatTimeIST(moonTime.rise)}
+                </li>
+                <li>
+                  <span className="fw-bold">{t.panchangam.moonset}</span> :{' '}
+                  {formatTimeIST(moonTime.set)}
+                </li>
+              </ul>
+            </div>
+          </>
+        )}
       </div>
 
-      <style jsx>{`
-        .icon-sprite {
-          background-image: url(${imgSprite.src});
-          background-repeat: no-repeat;
-          width: 56px;
-          height: 40px;
-          display: inline-block;
-        }
-
-        /* Enhanced Location Selector Animations */
-        .collapse-header {
-          transition: all 0.3s ease;
-          cursor: pointer;
-        }
-
-        .collapse-header:hover {
-          background-color: rgba(255, 255, 255, 0.1) !important;
-        }
-
-        /* Theme-specific styling for location search */
-        #collapse-text {
-          border-top-color: rgba(255, 255, 255, 0.2) !important;
-        }
-
-        #collapse-text .form-label {
-          font-weight: 500;
-        }
-
-        #collapse-text .fas {
-          opacity: 0.9;
-        }
-
-        .location-display {
-          transition: all 0.2s ease;
-        }
-
-        .pulse-icon {
-          animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        .success-glow {
-          animation: success-glow 1s ease-in-out;
-          background-color: rgba(40, 167, 69, 0.2) !important;
-        }
-
-        .fade-in {
-          animation: fadeIn 0.5s ease-in;
-        }
-
-        .slide-down {
-          animation: slideDown 0.3s ease-out;
-        }
-
-        .flag-bounce {
-          animation: flagBounce 0.6s ease-out;
-        }
-
-        .location-preview {
-          transform-origin: top;
-          transition: all 0.3s ease;
-        }
-
-        .submit-btn {
-          transition: all 0.3s ease;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .submit-btn.submitting {
-          transform: scale(0.98);
-        }
-
-        .submit-btn.success-state {
-          transform: scale(1.02);
-          box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
-        }
-
-        .bounce-in {
-          animation: bounceIn 0.6s ease-out;
-        }
-
-        .spin-animation {
-          animation: spin 1s linear infinite;
-        }
-
-        .cancel-btn {
-          transition: all 0.2s ease;
-        }
-
-        .cancel-btn.disabled-state {
-          opacity: 0.5;
-          transform: scale(0.95);
-        }
-
-        /* Keyframe Animations */
-        @keyframes pulse {
-          0%,
-          100% {
-            transform: scale(1);
+      <style jsx>
+        {`
+          .icon-sprite {
+            background-image: url(${imgSprite.src});
+            background-repeat: no-repeat;
+            width: 56px;
+            height: 40px;
+            display: inline-block;
           }
-          50% {
-            transform: scale(1.1);
-          }
-        }
 
-        @keyframes success-glow {
-          0% {
-            background-color: rgba(40, 167, 69, 0);
+          /* View More Button - Orange Theme with Animation */
+          .view-more-btn {
+            background-color: #ff6600 !important;
+            border-color: #ff6600 !important;
+            color: white !important;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
           }
-          50% {
-            background-color: rgba(40, 167, 69, 0.3);
-          }
-          100% {
-            background-color: rgba(40, 167, 69, 0.2);
-          }
-        }
 
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
+          .view-more-btn:hover {
+            background-color: #e65c00 !important;
+            border-color: #e65c00 !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(255, 102, 0, 0.3);
           }
-          to {
-            opacity: 1;
+
+          .view-more-btn:active {
             transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(255, 102, 0, 0.3);
           }
-        }
 
-        @keyframes slideDown {
-          from {
+          .view-more-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
             opacity: 0;
-            transform: translateY(-15px) scaleY(0.8);
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
           }
-          to {
-            opacity: 1;
-            transform: translateY(0) scaleY(1);
-          }
-        }
 
-        @keyframes flagBounce {
-          0% {
-            transform: scale(0) rotate(0deg);
+          .view-more-btn:focus:not(:active)::after {
+            animation: ripple 1s ease-out;
           }
-          50% {
-            transform: scale(1.2) rotate(5deg);
-          }
-          100% {
-            transform: scale(1) rotate(0deg);
-          }
-        }
 
-        @keyframes bounceIn {
-          0% {
-            transform: scale(0.3);
-            opacity: 0;
+          @keyframes ripple {
+            0% {
+              transform: scale(0, 0);
+              opacity: 0.5;
+            }
+            100% {
+              transform: scale(50, 50);
+              opacity: 0;
+            }
           }
-          50% {
-            transform: scale(1.05);
-          }
-          70% {
-            transform: scale(0.9);
-          }
-          100% {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
 
-        @keyframes spin {
-          from {
-            transform: rotate(0deg);
+          /* Enhanced Location Selector Animations */
+          .collapse-header {
+            transition: all 0.3s ease;
+            cursor: pointer;
           }
-          to {
-            transform: rotate(360deg);
+
+          .collapse-header:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
           }
-        }
 
-        /* Progress Bar Enhancements */
-        .progress {
-          background-color: #e9ecef;
-          border-radius: 10px;
-          overflow: hidden;
-        }
-
-        .progress-bar {
-          background: linear-gradient(45deg, #007bff, #0056b3);
-          border-radius: 10px;
-          transition: width 0.3s ease;
-        }
-
-        .progress-bar-animated {
-          animation: progress-bar-stripes 1s linear infinite;
-        }
-
-        @keyframes progress-bar-stripes {
-          0% {
-            background-position: 1rem 0;
+          /* Theme-specific styling for location search */
+          #collapse-text {
+            border-top-color: rgba(255, 255, 255, 0.2) !important;
           }
-          100% {
-            background-position: 0 0;
-          }
-        }
 
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
+          #collapse-text .form-label {
+            font-weight: 500;
+          }
+
+          #collapse-text .fas {
+            opacity: 0.9;
+          }
+
+          .location-display {
+            transition: all 0.2s ease;
+          }
+
+          .pulse-icon {
+            animation: pulse 1.5s ease-in-out infinite;
+          }
+
+          .success-glow {
+            animation: success-glow 1s ease-in-out;
+            background-color: rgba(40, 167, 69, 0.2) !important;
+          }
+
+          .fade-in {
+            animation: fadeIn 0.5s ease-in;
+          }
+
+          .slide-down {
+            animation: slideDown 0.3s ease-out;
+          }
+
+          .flag-bounce {
+            animation: flagBounce 0.6s ease-out;
+          }
+
           .location-preview {
-            margin: 8px 0;
+            transform-origin: top;
+            transition: all 0.3s ease;
           }
 
           .submit-btn {
-            font-size: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+          }
+
+          .submit-btn.submitting {
+            transform: scale(0.98);
+          }
+
+          .submit-btn.success-state {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+          }
+
+          .bounce-in {
+            animation: bounceIn 0.6s ease-out;
+          }
+
+          .spin-animation {
+            animation: spin 1s linear infinite;
           }
 
           .cancel-btn {
-            min-width: 32px;
+            transition: all 0.2s ease;
           }
-        }
-      `}</style>
+
+          .cancel-btn.disabled-state {
+            opacity: 0.5;
+            transform: scale(0.95);
+          }
+
+          /* Keyframe Animations */
+          @keyframes pulse {
+            0%,
+            100% {
+              transform: scale(1);
+            }
+            50% {
+              transform: scale(1.1);
+            }
+          }
+
+          @keyframes success-glow {
+            0% {
+              background-color: rgba(40, 167, 69, 0);
+            }
+            50% {
+              background-color: rgba(40, 167, 69, 0.3);
+            }
+            100% {
+              background-color: rgba(40, 167, 69, 0.2);
+            }
+          }
+
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          @keyframes slideDown {
+            from {
+              opacity: 0;
+              transform: translateY(-15px) scaleY(0.8);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0) scaleY(1);
+            }
+          }
+
+          @keyframes flagBounce {
+            0% {
+              transform: scale(0) rotate(0deg);
+            }
+            50% {
+              transform: scale(1.2) rotate(5deg);
+            }
+            100% {
+              transform: scale(1) rotate(0deg);
+            }
+          }
+
+          @keyframes bounceIn {
+            0% {
+              transform: scale(0.3);
+              opacity: 0;
+            }
+            50% {
+              transform: scale(1.05);
+            }
+            70% {
+              transform: scale(0.9);
+            }
+            100% {
+              transform: scale(1);
+              opacity: 1;
+            }
+          }
+
+          @keyframes spin {
+            from {
+              transform: rotate(0deg);
+            }
+            to {
+              transform: rotate(360deg);
+            }
+          }
+
+          /* Progress Bar Enhancements */
+          .progress {
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+          }
+
+          .progress-bar {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+          }
+
+          .progress-bar-animated {
+            animation: progress-bar-stripes 1s linear infinite;
+          }
+
+          @keyframes progress-bar-stripes {
+            0% {
+              background-position: 1rem 0;
+            }
+            100% {
+              background-position: 0 0;
+            }
+          }
+
+          /* Mobile Responsive */
+          @media (max-width: 768px) {
+            .location-preview {
+              margin: 8px 0;
+            }
+
+            .submit-btn {
+              font-size: 12px;
+            }
+
+            .cancel-btn {
+              min-width: 32px;
+            }
+          }
+        `}
+      </style>
     </>
   );
 }
