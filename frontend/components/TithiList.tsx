@@ -1,9 +1,8 @@
 // components/TithiList.tsx
-import Link from 'next/link';
-import { tithiMap } from '@/utils/tithiMap';
-import { Row, Col } from 'react-bootstrap';
-import { capitalize } from '@/utils/utils';
 import { useTranslation } from '@/hooks/useTranslation';
+import { tithiMap } from '@/utils/tithiMap';
+import Link from 'next/link';
+import { Col, Row } from 'react-bootstrap';
 
 type TithiListProps = {
   title?: string;
@@ -35,7 +34,7 @@ export default function TithiList({ title, currentTithi, year }: TithiListProps)
                   href={`/calendar/tithi/${tithi}-${resolvedYear}`}
                   className="gr-hover-shadow-1 d-flex flex-column border px-2 py-2 text-center"
                 >
-                  {t.panchangam[tithi]}
+                  {t.panchangam[tithi as keyof typeof t.panchangam] || tithi}
                 </Link>
               </Col>
             ))}

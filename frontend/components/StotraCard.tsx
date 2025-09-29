@@ -44,7 +44,7 @@ export default function StotraCard({ stotra, locale, showCanonicalSlug = true }:
   if (!translation) return null;
 
   return (
-    <Col className="h5 mb-3">
+    <Col sm="12" md="6" lg="6" xl="4" className="h5 mb-3">
       <Link
         href={`/stotras/${stotra.canonicalSlug}`}
         className="feature-widget focus-reset d-flex flex-column min-height-px-280 rounded-4 gr-hover-shadow-1 border bg-white text-center"
