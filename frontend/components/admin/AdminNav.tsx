@@ -36,6 +36,20 @@ export default function AdminNav() {
               >
                 Add Article
               </Nav.Link>
+              <Nav.Link
+                as={Link}
+                href="/admin/stotras"
+                className={router.pathname.startsWith('/admin/stotras') ? 'active' : ''}
+              >
+                Stotras
+              </Nav.Link>
+              <Nav.Link
+                as={Link}
+                href="/admin/add-stotra"
+                className={router.pathname === '/admin/add-stotra' ? 'active' : ''}
+              >
+                Add Stotra
+              </Nav.Link>
             </Nav>
             <Nav>
               <Nav.Link as={Link} href="/">
