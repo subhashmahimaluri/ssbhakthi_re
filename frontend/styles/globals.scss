@@ -281,6 +281,59 @@ body {
   }
 }
 
+// Stotra Editor Card Styles
+.stotra-editor-card,
+.stotra-meaning-card {
+  border: 1px solid #dee2e6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+  .card-body {
+    padding: 1.5rem;
+
+    // Ensure CKEditor container has proper styling
+    .ck-editor {
+      width: 100%;
+      min-height: 300px;
+
+      .ck-content {
+        min-height: 250px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+    }
+  }
+
+  &.stotra-editor-card {
+    margin-bottom: 2rem !important;
+  }
+
+  &.stotra-meaning-card {
+    margin-top: 2rem;
+    margin-bottom: 2rem !important;
+
+    .card-header {
+      background-color: #f8f9fa;
+      border-bottom: 2px solid #e9ecef;
+    }
+  }
+}
+
+.stotra-content-editor,
+.stotra-meaning-editor {
+  position: relative;
+  z-index: 1;
+
+  // Ensure proper containment
+  overflow: visible;
+
+  // Fix any potential floating issues
+  &::after {
+    content: '';
+    display: table;
+    clear: both;
+  }
+}
+
 .stotra-content {
   background-color: #f8f9fa;
   padding: 2rem;

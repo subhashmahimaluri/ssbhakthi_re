@@ -110,7 +110,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
         sub: 'dev-user-123',
         email: 'user@example.com',
         preferred_username: 'Subhash Ycs', // Use a real-looking name for development
-        roles: ['user'],
+        roles: ['user', 'author', 'editor', 'admin'], // Give all roles for development
       };
       next();
       return;

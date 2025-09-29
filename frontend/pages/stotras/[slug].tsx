@@ -4,9 +4,11 @@ import Layout from '@/components/Layout/Layout';
 import CommentSection from '@/components/comments/CommentSection';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getStotraDetailMetaData } from '@/utils/seo';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Col, Row } from 'react-bootstrap';
+import { Button, Col, Row } from 'react-bootstrap';
 
 interface StotraTranslation {
   title: string;
@@ -87,6 +89,7 @@ const YouTubeEmbed = ({ videoId }: { videoId: string }) => {
 
 export default function StotraPage() {
   const { t, locale } = useTranslation();
+  const { data: userSession } = useSession();
   const router = useRouter();
   const { slug } = router.query;
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -286,6 +289,10 @@ export default function StotraPage() {
     ? getStotraDetailMetaData(translation.seoTitle)
     : { title: 'Stotra | SS Bhakthi' };
 
+  // Check if user has admin access
+  const userRoles = (userSession?.user?.roles as string[]) || [];
+  const hasAdminAccess = userRoles.some(role => ['admin', 'editor', 'author'].includes(role));
+
   // Additional safety check for translation data
   if (!translation) {
     return (
@@ -324,8 +331,18 @@ export default function StotraPage() {
       <Row className="mt-25 py-5">
         <Col xl="8" lg="8" md="12" className="my-5 py-5">
           <div className="left-container shadow-1 px-md-10 bg-white px-5 py-5 text-black">
-            {/* Title */}
-            <h1 className="text-primary mb-4 text-center">{translation.title}</h1>
+            {/* Title and Edit Button */}
+            <div className="d-flex justify-content-between align-items-center mb-4">
+              <h1 className="text-primary mb-0">{translation.title}</h1>
+              {hasAdminAccess && (
+                <Link href={`/admin/stotras/${stotra.canonicalSlug}/edit`}>
+                  <Button variant="outline-primary" size="sm">
+                    <i className="bi bi-pencil me-1"></i>
+                    Edit
+                  </Button>
+                </Link>
+              )}
+            </div>
 
             {/* YouTube Video Embed (async load) */}
             {translation.videoId && (

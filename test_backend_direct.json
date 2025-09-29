@@ -1,0 +1,22 @@
+{
+  "contentType": "stotra",
+  "canonicalSlug": "test-backend-direct-objectid",
+  "stotraTitle": "Test Backend Direct ObjectId",
+  "status": "draft",
+  "imageUrl": null,
+  "categories": {
+    "typeIds": ["68ac2239bfcc70ec4468aa8c"],
+    "devaIds": [],
+    "byNumberIds": []
+  },
+  "translations": {
+    "te": {
+      "title": "Test Backend Direct",
+      "seoTitle": null,
+      "videoId": null,
+      "stotra": "<p>Test content</p>",
+      "stotraMeaning": null,
+      "body": null
+    }
+  }
+}

@@ -9,15 +9,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  console.log('🔎 [Categories API] Starting request...');
+
   try {
-    // Check authentication for admin access
+    // Check authentication for admin access (with development bypass)
     const session = await getServerSession(req, res, authOptions);
 
-    if (!session) {
+    // Development environment bypass
+    let effectiveSession = session;
+    if (!session && process.env.NODE_ENV === 'development') {
+      console.log('🔧 Development mode: bypassing authentication for categories API');
+      effectiveSession = {
+        user: {
+          id: 'dev-user',
+          email: 'dev@example.com',
+          name: 'Development User',
+          roles: ['admin'],
+        },
+        accessToken: 'dev-token',
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      };
+    }
+
+    if (!effectiveSession) {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const userRoles = (session.user?.roles as string[]) || [];
+    const userRoles = (effectiveSession.user?.roles as string[]) || [];
     const hasAdminAccess = userRoles.some(role => ['admin', 'editor', 'author'].includes(role));
 
     if (!hasAdminAccess) {
@@ -44,28 +62,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     `;
 
+    console.log('🔎 [Categories API] Making GraphQL request to:', `${BACKEND_URL}/graphql`);
+    console.log('🔎 [Categories API] GraphQL query:', query.trim());
+
     const response = await fetch(`${BACKEND_URL}/graphql`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(session.accessToken && {
-          Authorization: `Bearer ${session.accessToken}`,
-        }),
+        ...(effectiveSession.accessToken &&
+          effectiveSession.accessToken !== 'dev-token' && {
+            Authorization: `Bearer ${effectiveSession.accessToken}`,
+          }),
       },
       body: JSON.stringify({ query }),
     });
 
+    console.log('🔎 [Categories API] GraphQL response status:', response.status);
+
     if (!response.ok) {
-      throw new Error(`GraphQL responded with ${response.status}`);
+      const errorText = await response.text();
+      console.error('😱 [Categories API] GraphQL error response:', errorText);
+      throw new Error(`GraphQL responded with ${response.status}: ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('🔎 [Categories API] GraphQL response data:', JSON.stringify(data, null, 2));
 
-    if (data.errors) {
-      throw new Error(data.errors[0]?.message || 'GraphQL error');
+    // Handle Apollo Server's nested response format
+    const actualData = data.body?.singleResult || data;
+
+    if (actualData.errors) {
+      console.error('😱 [Categories API] GraphQL errors:', actualData.errors);
+      throw new Error(actualData.errors[0]?.message || 'GraphQL error');
     }
 
-    const categories = data.data?.categories?.items || [];
+    const categories = actualData.data?.categories?.items || [];
+    console.log(`🔎 [Categories API] Retrieved ${categories.length} categories from GraphQL`);
 
     // Parse meta field if it's a string
     const parsedCategories = categories.map((cat: any) => {
@@ -84,12 +116,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
     });
 
+    console.log(
+      `🔎 [Categories API] Parsed ${parsedCategories.length} categories, returning to client`
+    );
+
     res.json({
       categories: parsedCategories,
       total: parsedCategories.length,
     });
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    console.error('😱 [Categories API] Error:', error);
+    console.error('😱 [Categories API] Error stack:', (error as Error)?.stack);
     res.status(500).json({
       error: 'Failed to fetch categories',
       details: error instanceof Error ? error.message : 'Unknown error',

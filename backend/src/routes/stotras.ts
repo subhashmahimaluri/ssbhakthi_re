@@ -1,5 +1,6 @@
 import { Request, Response, Router } from 'express';
 import mongoose from 'mongoose';
+import { requireAuth, requireRole } from '../auth/jwt';
 import { Content, LanguageCode } from '../models/Content';
 
 const router: Router = Router();
@@ -28,8 +29,16 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       contentType: 'stotra',
     };
 
-    // Only filter by status if explicitly provided
-    if (status && status !== 'all') {
+    // For public access (when no status is specified), only show published stotras
+    if (!status || status === 'all') {
+      // Check if this is an admin request (you can determine this by checking headers or auth)
+      const isAdminRequest = req.headers['x-admin-access'] === 'true' || status === 'all';
+
+      if (!isAdminRequest) {
+        query.status = 'published';
+        console.log('🔒 Public access: filtering to published stotras only');
+      }
+    } else if (status !== 'all') {
       query.status = status;
     }
 
@@ -54,6 +63,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const transformedStotras = stotras.map(stotra => ({
       canonicalSlug: stotra.canonicalSlug,
       contentType: stotra.contentType,
+      stotraTitle: stotra.stotraTitle,
       status: stotra.status,
       imageUrl: stotra.imageUrl,
       translations: {
@@ -129,6 +139,7 @@ router.get('/:canonicalSlug', async (req: Request, res: Response): Promise<void>
     res.json({
       canonicalSlug: stotra.canonicalSlug,
       contentType: stotra.contentType,
+      stotraTitle: stotra.stotraTitle,
       status: stotra.status,
       imageUrl: stotra.imageUrl,
       categories: stotra.categories,
@@ -155,124 +166,145 @@ router.get('/:canonicalSlug', async (req: Request, res: Response): Promise<void>
 });
 
 // POST /rest/stotras - Create new stotra
-router.post('/', async (req: Request, res: Response): Promise<void> => {
-  try {
-    console.log('📝 Creating new stotra with data:', req.body);
+router.post(
+  '/',
+  requireAuth,
+  requireRole('author', 'editor', 'admin'),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      console.log('📝 Creating new stotra with data:', req.body);
 
-    const {
-      contentType = 'stotra',
-      canonicalSlug,
-      status = 'draft',
-      imageUrl,
-      categories,
-      translations,
-    } = req.body;
+      const {
+        contentType = 'stotra',
+        canonicalSlug,
+        stotraTitle,
+        status = 'draft',
+        imageUrl,
+        categories,
+        translations,
+      } = req.body;
 
-    // Validate required fields
-    if (!canonicalSlug || !translations || Object.keys(translations).length === 0) {
-      res.status(400).json({
-        error: {
-          message: 'canonicalSlug and at least one translation are required',
-          code: 'VALIDATION_ERROR',
-        },
+      // Validate required fields
+      if (!canonicalSlug || !translations || Object.keys(translations).length === 0) {
+        res.status(400).json({
+          error: {
+            message: 'canonicalSlug and at least one translation are required',
+            code: 'VALIDATION_ERROR',
+          },
+        });
+        return;
+      }
+
+      // Check if stotra with this slug already exists
+      const existingStotra = await Content.findOne({
+        canonicalSlug,
+        contentType: 'stotra',
       });
-      return;
-    }
 
-    // Check if stotra with this slug already exists
-    const existingStotra = await Content.findOne({
-      canonicalSlug,
-      contentType: 'stotra',
-    });
+      if (existingStotra) {
+        res.status(409).json({
+          error: {
+            message: `Stotra with slug '${canonicalSlug}' already exists`,
+            code: 'CONFLICT',
+          },
+        });
+        return;
+      }
 
-    if (existingStotra) {
-      res.status(409).json({
-        error: {
-          message: `Stotra with slug '${canonicalSlug}' already exists`,
-          code: 'CONFLICT',
-        },
+      // Create new stotra using direct MongoDB insertion
+      const currentTime = new Date();
+
+      console.log('🗨️ Debugging - translations data:', JSON.stringify(translations, null, 2));
+
+      // Use direct MongoDB insertion to bypass Mongoose
+      console.log('🗨️ Using direct MongoDB insertion to bypass Mongoose...');
+
+      const db = mongoose.connection.db;
+      if (!db) {
+        throw new Error('Database connection not established');
+      }
+
+      const contentsCollection = db.collection('contents');
+
+      // Convert string category IDs to ObjectIds
+      const convertToObjectIds = (ids: string[] | undefined): mongoose.Types.ObjectId[] => {
+        if (!ids || !Array.isArray(ids)) return [];
+        return ids
+          .filter(id => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id))
+          .map(id => new mongoose.Types.ObjectId(id));
+      };
+
+      const processedCategories = {
+        typeIds: convertToObjectIds(categories?.typeIds),
+        devaIds: convertToObjectIds(categories?.devaIds),
+        byNumberIds: convertToObjectIds(categories?.byNumberIds),
+      };
+
+      const stotraDoc = {
+        contentType,
+        canonicalSlug,
+        stotraTitle,
+        status,
+        imageUrl,
+        categories: processedCategories,
+        translations,
+        createdAt: currentTime,
+        updatedAt: currentTime,
+      };
+
+      console.log('🗨️ Final document to insert:', JSON.stringify(stotraDoc, null, 2));
+
+      const result = await contentsCollection.insertOne(stotraDoc);
+
+      console.log('✅ Stotra created successfully with ID:', result.insertedId);
+
+      // Fetch the created document to return
+      const savedStotra = await contentsCollection.findOne({ _id: result.insertedId });
+
+      if (!savedStotra) {
+        throw new Error('Failed to retrieve created stotra');
+      }
+
+      console.log('✅ Stotra created successfully:', savedStotra['canonicalSlug']);
+
+      res.status(201).json({
+        success: true,
+        stotra: savedStotra,
+        message: 'Stotra created successfully',
       });
-      return;
-    }
+    } catch (error) {
+      console.error('Error creating stotra:', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
 
-    // Create new stotra using direct MongoDB insertion
-    const currentTime = new Date();
+      // Additional debugging for MongoDB validation errors
+      if (error instanceof Error && 'errInfo' in error) {
+        console.error('MongoDB error info:', (error as any).errInfo);
+      }
+      if (error instanceof Error && 'code' in error) {
+        console.error('MongoDB error code:', (error as any).code);
+      }
 
-    console.log('🗨️ Debugging - translations data:', JSON.stringify(translations, null, 2));
-
-    // Use direct MongoDB insertion to bypass Mongoose
-    console.log('🗨️ Using direct MongoDB insertion to bypass Mongoose...');
-
-    const db = mongoose.connection.db;
-    if (!db) {
-      throw new Error('Database connection not established');
-    }
-
-    const contentsCollection = db.collection('contents');
-
-    const stotraDoc = {
-      contentType,
-      canonicalSlug,
-      status,
-      imageUrl,
-      categories: categories || { typeIds: [], devaIds: [], byNumberIds: [] },
-      translations,
-      createdAt: currentTime,
-      updatedAt: currentTime,
-    };
-
-    console.log('🗨️ Final document to insert:', JSON.stringify(stotraDoc, null, 2));
-
-    const result = await contentsCollection.insertOne(stotraDoc);
-
-    console.log('✅ Stotra created successfully with ID:', result.insertedId);
-
-    // Fetch the created document to return
-    const savedStotra = await contentsCollection.findOne({ _id: result.insertedId });
-
-    if (!savedStotra) {
-      throw new Error('Failed to retrieve created stotra');
-    }
-
-    console.log('✅ Stotra created successfully:', savedStotra['canonicalSlug']);
-
-    res.status(201).json({
-      success: true,
-      stotra: savedStotra,
-      message: 'Stotra created successfully',
-    });
-  } catch (error) {
-    console.error('Error creating stotra:', error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-
-    // Additional debugging for MongoDB validation errors
-    if (error instanceof Error && 'errInfo' in error) {
-      console.error('MongoDB error info:', (error as any).errInfo);
-    }
-    if (error instanceof Error && 'code' in error) {
-      console.error('MongoDB error code:', (error as any).code);
-    }
-
-    if (error instanceof Error && error.name === 'ValidationError') {
-      console.error('Validation details:', error.message);
-      res.status(400).json({
-        error: {
-          message: 'Validation error',
-          code: 'VALIDATION_ERROR',
-          details: error.message,
-        },
-      });
-    } else {
-      res.status(500).json({
-        error: {
-          message: 'Failed to create stotra',
-          code: 'INTERNAL_ERROR',
-          details: error instanceof Error ? error.message : 'Unknown error',
-        },
-      });
+      if (error instanceof Error && error.name === 'ValidationError') {
+        console.error('Validation details:', error.message);
+        res.status(400).json({
+          error: {
+            message: 'Validation error',
+            code: 'VALIDATION_ERROR',
+            details: error.message,
+          },
+        });
+      } else {
+        res.status(500).json({
+          error: {
+            message: 'Failed to create stotra',
+            code: 'INTERNAL_ERROR',
+            details: error instanceof Error ? error.message : 'Unknown error',
+          },
+        });
+      }
     }
   }
-});
+);
 
 // PUT /rest/stotras/:canonicalSlug - Update existing stotra
 router.put('/:canonicalSlug', async (req: Request, res: Response): Promise<void> => {
@@ -280,7 +312,7 @@ router.put('/:canonicalSlug', async (req: Request, res: Response): Promise<void>
     const { canonicalSlug } = req.params;
     console.log(`📝 Updating stotra '${canonicalSlug}' with data:`, req.body);
 
-    const { status, imageUrl, categories, translations } = req.body;
+    const { status, stotraTitle, imageUrl, categories, translations } = req.body;
 
     // Find existing stotra
     const existingStotra = await Content.findOne({
@@ -302,6 +334,7 @@ router.put('/:canonicalSlug', async (req: Request, res: Response): Promise<void>
     const updateData: any = {};
 
     if (status !== undefined) updateData.status = status;
+    if (stotraTitle !== undefined) updateData.stotraTitle = stotraTitle;
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
     if (categories !== undefined) updateData.categories = categories;
 

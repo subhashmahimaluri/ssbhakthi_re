@@ -1,0 +1,12 @@
+{
+  "title": "Test Frontend API",
+  "stotraTitle": "Test Frontend Stotra Title",
+  "canonicalSlug": "test-frontend-api-creation",
+  "stotra": "<p>Test stotra content from frontend API</p>",
+  "stotraMeaning": "<p>Test meaning content</p>",
+  "status": "draft",
+  "locale": "en",
+  "categoryIds": [],
+  "devaIds": [],
+  "byNumberIds": []
+}

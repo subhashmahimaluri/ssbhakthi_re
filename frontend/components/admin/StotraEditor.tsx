@@ -36,10 +36,12 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
   const [loadingCategories, setLoadingCategories] = useState(true);
 
   const [formData, setFormData] = useState({
+    stotraTitle: '', // Common title for all translations
+    canonicalSlug: '', // Common slug for all translations
     title: { te: '', en: '', hi: '', kn: '' },
-    slug: { te: '', en: '', hi: '', kn: '' },
     stotra: { te: '', en: '', hi: '', kn: '' },
     stotraMeaning: { te: '', en: '', hi: '', kn: '' },
+    videoId: { te: '', en: '', hi: '', kn: '' }, // YouTube video ID per language
     status: 'draft' as 'draft' | 'published' | 'scheduled',
     scheduledAt: '',
     seoTitle: '',
@@ -67,20 +69,43 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
   const loadCategories = async () => {
     try {
       setLoadingCategories(true);
+      console.log('📂 Loading categories from /api/categories...');
       const response = await fetch('/api/categories');
+      console.log('📂 Categories API response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
-        console.log('Categories loaded:', data.categories);
+        console.log('📂 Categories API response data:', data);
+        console.log('📂 Categories array:', data.categories);
+        console.log('📂 Categories count:', data.categories?.length || 0);
+
+        // Log taxonomy distribution
+        if (data.categories) {
+          const typeCount = data.categories.filter(
+            (cat: any) => cat.meta?.taxonomy === 'type'
+          ).length;
+          const devaCount = data.categories.filter(
+            (cat: any) => cat.meta?.taxonomy === 'deva'
+          ).length;
+          const byNumberCount = data.categories.filter(
+            (cat: any) => cat.meta?.taxonomy === 'by-number'
+          ).length;
+          console.log('📂 Taxonomy distribution:', { typeCount, devaCount, byNumberCount });
+        }
+
         setCategories(data.categories || []);
       } else {
-        console.warn('Failed to load categories:', response.status);
+        console.warn('⚠️ Failed to load categories:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.warn('⚠️ Categories API error:', errorText);
         setCategories([]);
       }
     } catch (error) {
-      console.error('Error loading categories:', error);
+      console.error('❌ Error loading categories:', error);
       setCategories([]);
     } finally {
       setLoadingCategories(false);
+      console.log('📂 Categories loading completed');
     }
   };
 
@@ -103,12 +128,14 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
 
       // Transform single language stotra to multilingual format
       const newFormData = {
+        stotraTitle: stotra.stotraTitle || '', // Common title for all translations
+        canonicalSlug: stotra.canonicalSlug || '', // Common slug for all translations
         title: { te: '', en: '', hi: '', kn: '' },
-        slug: { te: '', en: '', hi: '', kn: '' },
         stotra: { te: '', en: '', hi: '', kn: '' },
         stotraMeaning: { te: '', en: '', hi: '', kn: '' },
+        videoId: { te: '', en: '', hi: '', kn: '' }, // YouTube video ID per language
         status: stotra.status as 'draft' | 'published' | 'scheduled',
-        scheduledAt: '',
+        scheduledAt: stotra.scheduledAt || '',
         seoTitle: stotra.seoTitle || '',
         seoDescription: stotra.seoDescription || '',
         seoKeywords: stotra.seoKeywords || '',
@@ -119,12 +146,18 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
         tagIds: [],
       };
 
+      console.log('Loading existing categories:', {
+        typeIds: stotra.categories?.typeIds,
+        devaIds: stotra.categories?.devaIds,
+        byNumberIds: stotra.categories?.byNumberIds,
+      });
+
       // Set the current locale data
       newFormData.title[currentLocale as keyof typeof newFormData.title] = stotra.title || '';
-      newFormData.slug[currentLocale as keyof typeof newFormData.slug] = stotra.slug || '';
       newFormData.stotra[currentLocale as keyof typeof newFormData.stotra] = stotra.stotra || '';
       newFormData.stotraMeaning[currentLocale as keyof typeof newFormData.stotraMeaning] =
         stotra.stotraMeaning || '';
+      newFormData.videoId[currentLocale as keyof typeof newFormData.videoId] = stotra.videoId || '';
 
       setFormData(newFormData);
 
@@ -139,31 +172,48 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
   };
 
   const generateSlug = (title: string) => {
-    return title
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .trim();
+    if (!title.trim()) return '';
+
+    return (
+      title
+        .toLowerCase()
+        // Replace common diacritics and special characters
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        // Keep only alphanumeric characters, spaces, and hyphens
+        .replace(/[^a-z0-9\s-]/g, '')
+        // Replace multiple spaces/hyphens with single hyphen
+        .replace(/[\s-]+/g, '-')
+        // Remove leading/trailing hyphens
+        .replace(/^-+|-+$/g, '')
+        .trim()
+    );
   };
 
   const handleTitleChange = (value: string) => {
     setFormData(prev => ({
       ...prev,
       title: { ...prev.title, [currentLocale]: value },
-      slug: { ...prev.slug, [currentLocale]: generateSlug(value) },
     }));
   };
 
   const handleFieldChange = (field: string, value: string) => {
-    if (field === 'title') {
+    if (field === 'stotraTitle') {
+      setFormData(prev => ({
+        ...prev,
+        stotraTitle: value,
+        // Auto-generate canonical slug from stotra title
+        canonicalSlug: generateSlug(value),
+      }));
+    } else if (field === 'canonicalSlug') {
+      setFormData(prev => ({
+        ...prev,
+        canonicalSlug: value,
+      }));
+    } else if (field === 'title') {
       setFormData(prev => ({
         ...prev,
         title: { ...prev.title, [currentLocale]: value },
-      }));
-    } else if (field === 'slug') {
-      setFormData(prev => ({
-        ...prev,
-        slug: { ...prev.slug, [currentLocale]: value },
       }));
     } else if (field === 'stotra') {
       setFormData(prev => ({
@@ -174,6 +224,11 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
       setFormData(prev => ({
         ...prev,
         stotraMeaning: { ...prev.stotraMeaning, [currentLocale]: value },
+      }));
+    } else if (field === 'videoId') {
+      setFormData(prev => ({
+        ...prev,
+        videoId: { ...prev.videoId, [currentLocale]: value },
       }));
     } else {
       setFormData(prev => ({ ...prev, [field]: value }));
@@ -222,9 +277,12 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
     try {
       const stotraData = {
         title: formData.title[currentLocale as keyof typeof formData.title],
-        slug: formData.slug[currentLocale as keyof typeof formData.slug],
+        stotraTitle: formData.stotraTitle,
+        canonicalSlug: formData.canonicalSlug,
         stotra: formData.stotra[currentLocale as keyof typeof formData.stotra],
-        stotraMeaning: formData.stotraMeaning[currentLocale as keyof typeof formData.stotraMeaning],
+        stotraMeaning:
+          formData.stotraMeaning[currentLocale as keyof typeof formData.stotraMeaning] || null,
+        videoId: formData.videoId[currentLocale as keyof typeof formData.videoId] || null,
         status: formData.status,
         locale: currentLocale,
         scheduledAt: formData.scheduledAt || undefined,
@@ -238,6 +296,17 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
         tagIds: formData.tagIds,
       };
 
+      console.log('🔍 Form Data Details:');
+      console.log('  - Title:', stotraData.title);
+      console.log('  - Stotra Title:', stotraData.stotraTitle);
+      console.log('  - Canonical Slug:', stotraData.canonicalSlug);
+      console.log('  - Status:', stotraData.status);
+      console.log('  - Locale:', stotraData.locale);
+      console.log('  - Category IDs:', stotraData.categoryIds);
+      console.log('  - Deva IDs:', stotraData.devaIds);
+      console.log('  - ByNumber IDs:', stotraData.byNumberIds);
+      console.log('  - Stotra Content Length:', stotraData.stotra?.length || 0);
+      console.log('  - Stotra Meaning Length:', stotraData.stotraMeaning?.length || 0);
       console.log('Submitting stotra data:', stotraData);
       console.log('Stotra ID:', stotraId);
 
@@ -267,7 +336,13 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
         let errorMessage;
         try {
           const errorData = await response.json();
-          errorMessage = errorData.error || errorData.details || `HTTP ${response.status}`;
+          // Ensure errorMessage is always a string
+          const rawError = errorData.error || errorData.details || errorData.message;
+          if (typeof rawError === 'object') {
+            errorMessage = JSON.stringify(rawError);
+          } else {
+            errorMessage = String(rawError) || `HTTP ${response.status}`;
+          }
         } catch {
           errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         }
@@ -354,8 +429,59 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
               </Card.Header>
             </Card>
 
-            {/* Title */}
+            {/* Common Stotra Title */}
             <Card className="mb-3">
+              <Card.Header className="bg-primary text-white">
+                <h6 className="mb-0">
+                  <i className="bi bi-star-fill me-2"></i>
+                  Common Stotra Information
+                </h6>
+                <small className="text-light">
+                  These fields apply to all language translations
+                </small>
+              </Card.Header>
+              <Card.Body>
+                <Form.Group className="mb-3">
+                  <Form.Label>Stotra Title (Common for all languages)</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={formData.stotraTitle}
+                    onChange={e => handleFieldChange('stotraTitle', e.target.value)}
+                    placeholder="Enter common stotra title (e.g., Shiva Tandava Stotra)"
+                  />
+                  <Form.Text className="text-muted">
+                    This title is shared across all language translations and automatically
+                    generates the URL slug
+                  </Form.Text>
+                </Form.Group>
+
+                <Form.Group className="mb-0">
+                  <Form.Label>Canonical Slug (URL identifier)</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={formData.canonicalSlug}
+                    onChange={e => handleFieldChange('canonicalSlug', e.target.value)}
+                    placeholder="canonical-slug-for-all-languages"
+                  />
+                  <Form.Text className="text-muted">
+                    Auto-generated from the stotra title above. You can edit it if needed (e.g.,
+                    shiva-tandava-stotra)
+                  </Form.Text>
+                </Form.Group>
+              </Card.Body>
+            </Card>
+
+            {/* Language-specific Title */}
+            <Card className="mb-3">
+              <Card.Header>
+                <h6 className="mb-0">
+                  <i className="bi bi-translate me-2"></i>
+                  Language-specific Title ({currentLocale.toUpperCase()})
+                </h6>
+                <small className="text-muted">
+                  Title specific to {currentLocale.toUpperCase()} language
+                </small>
+              </Card.Header>
               <Card.Body>
                 <Form.Group className="mb-3">
                   <Form.Label>Title ({currentLocale.toUpperCase()})</Form.Label>
@@ -363,30 +489,38 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
                     type="text"
                     value={formData.title[currentLocale as keyof typeof formData.title] || ''}
                     onChange={e => handleTitleChange(e.target.value)}
-                    placeholder="Enter stotra title"
+                    placeholder="Enter stotra title in this language"
                     required
                   />
+                  <Form.Text className="text-muted">
+                    This is the language-specific title for {currentLocale.toUpperCase()}
+                  </Form.Text>
                 </Form.Group>
 
-                <Form.Group className="mb-3">
-                  <Form.Label>Slug ({currentLocale.toUpperCase()})</Form.Label>
+                <Form.Group className="mb-0">
+                  <Form.Label>YouTube Video ID ({currentLocale.toUpperCase()})</Form.Label>
                   <Form.Control
                     type="text"
-                    value={formData.slug[currentLocale as keyof typeof formData.slug] || ''}
-                    onChange={e => handleFieldChange('slug', e.target.value)}
-                    placeholder="url-friendly-slug"
+                    value={formData.videoId[currentLocale as keyof typeof formData.videoId] || ''}
+                    onChange={e => handleFieldChange('videoId', e.target.value)}
+                    placeholder="Enter YouTube video ID (e.g., dQw4w9WgXcQ)"
                   />
+                  <Form.Text className="text-muted">
+                    YouTube video ID from the URL (e.g., for
+                    https://youtube.com/watch?v=dQw4w9WgXcQ, enter 'dQw4w9WgXcQ')
+                  </Form.Text>
                 </Form.Group>
               </Card.Body>
             </Card>
 
             {/* Stotra Content Editor */}
-            <Card className="mb-3">
+            <Card className="stotra-editor-card mb-3">
               <Card.Header>
                 <h6 className="mb-0">Stotra Content ({currentLocale.toUpperCase()})</h6>
               </Card.Header>
-              <Card.Body>
+              <Card.Body className="stotra-content-editor">
                 <CKEditor
+                  id="stotra-content-editor"
                   ref={stotraEditorRef}
                   data={formData.stotra[currentLocale as keyof typeof formData.stotra] || ''}
                   onChange={handleStotraEditorChange}
@@ -395,7 +529,7 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
             </Card>
 
             {/* Stotra Meaning/Translation Editor - Separate Section */}
-            <Card className="mb-3">
+            <Card className="stotra-meaning-card mb-3">
               <Card.Header className="bg-light">
                 <h6 className="mb-0">
                   <i className="bi bi-translate me-2"></i>
@@ -405,8 +539,9 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
                   Provide meaning or translation of the stotra content above
                 </small>
               </Card.Header>
-              <Card.Body>
+              <Card.Body className="stotra-meaning-editor">
                 <CKEditor
+                  id="stotra-meaning-editor"
                   ref={meaningEditorRef}
                   data={
                     formData.stotraMeaning[currentLocale as keyof typeof formData.stotraMeaning] ||
@@ -481,17 +616,73 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
                   </div>
                 ) : (
                   <>
-                    {/* Debug categories */}
+                    {/* Debug categories and form data */}
                     {process.env.NODE_ENV === 'development' && (
                       <div className="bg-light mb-3 rounded p-2">
                         <small className="text-muted">
-                          <strong>Debug - Categories loaded:</strong> {categories.length}
+                          <strong>Debug Info:</strong>
                           <br />
-                          {categories.slice(0, 3).map(cat => (
-                            <div key={cat.id}>
-                              {cat.name?.en || 'No name'} - {cat.meta?.taxonomy || 'No taxonomy'}
+                          Categories loaded: {categories.length}
+                          <br />
+                          Type categories:{' '}
+                          {categories.filter(cat => cat.meta?.taxonomy === 'type').length}
+                          <br />
+                          Deva categories:{' '}
+                          {categories.filter(cat => cat.meta?.taxonomy === 'deva').length}
+                          <br />
+                          ByNumber categories:{' '}
+                          {categories.filter(cat => cat.meta?.taxonomy === 'by-number').length}
+                          <br />
+                          Selected typeIds: [{formData.categoryIds.join(', ')}]<br />
+                          Selected devaIds: [{formData.devaIds.join(', ')}]<br />
+                          Selected byNumberIds: [{formData.byNumberIds.join(', ')}]<br />
+                          <strong>Category ID Mapping:</strong>
+                          <br />
+                          {formData.categoryIds.length > 0 && (
+                            <div>
+                              <strong>Type IDs:</strong>{' '}
+                              {formData.categoryIds
+                                .map(id => {
+                                  const cat = categories.find(c => c.id === id);
+                                  return cat ? `${id}:${cat.name?.en}` : `${id}:NOT_FOUND`;
+                                })
+                                .join(', ')}
+                              <br />
                             </div>
-                          ))}
+                          )}
+                          {formData.devaIds.length > 0 && (
+                            <div>
+                              <strong>Deva IDs:</strong>{' '}
+                              {formData.devaIds
+                                .map(id => {
+                                  const cat = categories.find(c => c.id === id);
+                                  return cat ? `${id}:${cat.name?.en}` : `${id}:NOT_FOUND`;
+                                })
+                                .join(', ')}
+                              <br />
+                            </div>
+                          )}
+                          {formData.byNumberIds.length > 0 && (
+                            <div>
+                              <strong>ByNumber IDs:</strong>{' '}
+                              {formData.byNumberIds
+                                .map(id => {
+                                  const cat = categories.find(c => c.id === id);
+                                  return cat ? `${id}:${cat.name?.en}` : `${id}:NOT_FOUND`;
+                                })
+                                .join(', ')}
+                              <br />
+                            </div>
+                          )}
+                          <details>
+                            <summary>Sample categories (click to expand)</summary>
+                            {categories.slice(0, 5).map(cat => (
+                              <div key={cat.id} style={{ fontSize: '11px' }}>
+                                {cat.id} | {cat.name?.en || 'No name'} |{' '}
+                                {cat.meta?.taxonomy || 'No taxonomy'}
+                              </div>
+                            ))}
+                          </details>
                         </small>
                       </div>
                     )}
@@ -506,13 +697,20 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
                             e.target.selectedOptions,
                             option => option.value
                           );
+                          console.log('Type categories selected:', values);
                           setFormData(prev => ({ ...prev, categoryIds: values }));
                         }}
+                        style={{ minHeight: '120px' }}
                       >
                         {categories
                           .filter(cat => cat.meta?.taxonomy === 'type')
+                          .sort((a, b) => (a.name?.en || '').localeCompare(b.name?.en || ''))
                           .map(category => (
-                            <option key={category.id} value={category.id}>
+                            <option
+                              key={category.id}
+                              value={category.id}
+                              selected={formData.categoryIds.includes(category.id)}
+                            >
                               {category.name?.en || category.slug?.en || 'Untitled'}
                             </option>
                           ))}
@@ -520,7 +718,7 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
                       <Form.Text className="text-muted">
                         Hold Ctrl/Cmd to select multiple categories. Found{' '}
                         {categories.filter(cat => cat.meta?.taxonomy === 'type').length} type
-                        categories.
+                        categories. Selected: {formData.categoryIds.length}
                       </Form.Text>
                     </Form.Group>
 
@@ -534,13 +732,20 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
                             e.target.selectedOptions,
                             option => option.value
                           );
+                          console.log('Deva categories selected:', values);
                           setFormData(prev => ({ ...prev, devaIds: values }));
                         }}
+                        style={{ minHeight: '120px' }}
                       >
                         {categories
                           .filter(cat => cat.meta?.taxonomy === 'deva')
+                          .sort((a, b) => (a.name?.en || '').localeCompare(b.name?.en || ''))
                           .map(category => (
-                            <option key={category.id} value={category.id}>
+                            <option
+                              key={category.id}
+                              value={category.id}
+                              selected={formData.devaIds.includes(category.id)}
+                            >
                               {category.name?.en || category.slug?.en || 'Untitled'}
                             </option>
                           ))}
@@ -548,7 +753,7 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
                       <Form.Text className="text-muted">
                         Hold Ctrl/Cmd to select multiple deities. Found{' '}
                         {categories.filter(cat => cat.meta?.taxonomy === 'deva').length} deity
-                        categories.
+                        categories. Selected: {formData.devaIds.length}
                       </Form.Text>
                     </Form.Group>
 
@@ -562,13 +767,20 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
                             e.target.selectedOptions,
                             option => option.value
                           );
+                          console.log('ByNumber categories selected:', values);
                           setFormData(prev => ({ ...prev, byNumberIds: values }));
                         }}
+                        style={{ minHeight: '120px' }}
                       >
                         {categories
                           .filter(cat => cat.meta?.taxonomy === 'by-number')
+                          .sort((a, b) => (a.name?.en || '').localeCompare(b.name?.en || ''))
                           .map(category => (
-                            <option key={category.id} value={category.id}>
+                            <option
+                              key={category.id}
+                              value={category.id}
+                              selected={formData.byNumberIds.includes(category.id)}
+                            >
                               {category.name?.en || category.slug?.en || 'Untitled'}
                             </option>
                           ))}
@@ -576,7 +788,7 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
                       <Form.Text className="text-muted">
                         Hold Ctrl/Cmd to select multiple number categories. Found{' '}
                         {categories.filter(cat => cat.meta?.taxonomy === 'by-number').length} number
-                        categories.
+                        categories. Selected: {formData.byNumberIds.length}
                       </Form.Text>
                     </Form.Group>
                   </>

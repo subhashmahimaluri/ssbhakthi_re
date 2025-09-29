@@ -1,0 +1,22 @@
+{
+  "contentType": "stotra",
+  "canonicalSlug": "test-schema-validation",
+  "stotraTitle": "Test Schema Validation Stotra",
+  "status": "draft",
+  "imageUrl": null,
+  "categories": {
+    "typeIds": [],
+    "devaIds": [],
+    "byNumberIds": []
+  },
+  "translations": {
+    "en": {
+      "title": "Test Schema Validation",
+      "seoTitle": "Test Schema Validation SEO",
+      "videoId": null,
+      "stotra": "<p>Test stotra content for schema validation</p>",
+      "stotraMeaning": "<p>Test meaning content</p>",
+      "body": null
+    }
+  }
+}

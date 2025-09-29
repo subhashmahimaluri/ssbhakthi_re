@@ -4,7 +4,8 @@ import { authOptions } from '../auth/[...nextauth]';
 
 interface StotraData {
   title: string;
-  slug?: string;
+  stotraTitle?: string;
+  canonicalSlug?: string;
   stotra: string;
   stotraMeaning?: string;
   status: 'draft' | 'published' | 'scheduled';
@@ -30,12 +31,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Check authentication
     const session = await getServerSession(req, res, authOptions);
 
-    if (!session) {
+    // Development environment bypass
+    let effectiveSession = session;
+    if (!session && process.env.NODE_ENV === 'development') {
+      console.log('🔧 Development mode: bypassing authentication for stotra creation API');
+      effectiveSession = {
+        user: {
+          id: 'dev-user',
+          email: 'dev@example.com',
+          name: 'Development User',
+          roles: ['admin'],
+        },
+        accessToken: 'dev-token',
+        expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      };
+    }
+
+    if (!effectiveSession) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
     // Check permissions
-    const userRoles = (session.user?.roles as string[]) || [];
+    const userRoles = (effectiveSession.user?.roles as string[]) || [];
     const hasPermission = userRoles.some(role => ['admin', 'editor', 'author'].includes(role));
 
     if (!hasPermission) {
@@ -51,28 +68,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Generate slug if not provided
-    const slug =
-      stotraData.slug ||
+    // Use provided canonicalSlug or generate one from title
+    const canonicalSlug =
+      stotraData.canonicalSlug ||
       stotraData.title
         .toLowerCase()
         .replace(/[^\w\s-]/g, '')
         .replace(/\s+/g, '-')
-        .trim();
+        .trim() +
+        '-' +
+        Date.now();
 
-    // Generate canonical slug (unique identifier)
-    const canonicalSlug = `${slug}-${Date.now()}`;
+    // Helper function to convert string IDs to ObjectIds for MongoDB
+    const convertToObjectIds = (ids: string[] | undefined): string[] => {
+      if (!ids || !Array.isArray(ids)) return [];
+      return ids.filter(id => typeof id === 'string' && id.length === 24); // Basic ObjectId validation
+    };
 
     // Prepare the data structure for the backend API
     const backendData = {
       contentType: 'stotra',
       canonicalSlug,
+      stotraTitle: stotraData.stotraTitle || null,
       status: stotraData.status || 'draft',
       imageUrl: stotraData.featuredImage || null,
       categories: {
-        typeIds: stotraData.categoryIds || [],
-        devaIds: stotraData.devaIds || [],
-        byNumberIds: stotraData.byNumberIds || [],
+        typeIds: convertToObjectIds(stotraData.categoryIds),
+        devaIds: convertToObjectIds(stotraData.devaIds),
+        byNumberIds: convertToObjectIds(stotraData.byNumberIds),
       },
       translations: {
         [stotraData.locale]: {
@@ -88,12 +111,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('Creating stotra with data:', JSON.stringify(backendData, null, 2));
 
+    // Prepare headers with authentication for development
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Add development authentication token
+    if (process.env.NODE_ENV === 'development') {
+      headers['Authorization'] = 'Bearer dev-token';
+    }
+
     // Call backend API
     const response = await fetch('http://localhost:4000/rest/stotras', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(backendData),
     });
 

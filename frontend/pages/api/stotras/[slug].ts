@@ -4,9 +4,11 @@ import { authOptions } from '../auth/[...nextauth]';
 
 interface StotraData {
   title: string;
-  slug?: string;
+  stotraTitle?: string;
+  canonicalSlug?: string;
   stotra: string;
   stotraMeaning?: string;
+  videoId?: string;
   status: 'draft' | 'published' | 'scheduled';
   locale: string;
   scheduledAt?: string;
@@ -48,14 +50,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const transformedStotra = {
         canonicalSlug: stotraData.canonicalSlug,
         contentType: stotraData.contentType,
+        stotraTitle: stotraData.stotraTitle,
         status: stotraData.status,
         imageUrl: stotraData.imageUrl,
         categories: stotraData.categories,
         // Extract the current language translation
         title: stotraData.translations[locale as string]?.title || '',
-        slug: stotraData.translations[locale as string]?.slug || '',
         stotra: stotraData.translations[locale as string]?.stotra || '',
         stotraMeaning: stotraData.translations[locale as string]?.stotraMeaning || '',
+        videoId: stotraData.translations[locale as string]?.videoId || '',
         seoTitle: stotraData.translations[locale as string]?.seoTitle || '',
         createdAt: stotraData.createdAt,
         updatedAt: stotraData.updatedAt,
@@ -74,11 +77,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Check authentication for admin access
       const session = await getServerSession(req, res, authOptions);
 
-      if (!session) {
+      // Development environment bypass
+      let effectiveSession = session;
+      if (!session && process.env.NODE_ENV === 'development') {
+        console.log('🔧 Development mode: bypassing authentication for stotra update API');
+        effectiveSession = {
+          user: {
+            id: 'dev-user',
+            email: 'dev@example.com',
+            name: 'Development User',
+            roles: ['admin'],
+          },
+          accessToken: 'dev-token',
+          expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        };
+      }
+
+      if (!effectiveSession) {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      const userRoles = (session.user?.roles as string[]) || [];
+      const userRoles = (effectiveSession.user?.roles as string[]) || [];
       const hasAdminAccess = userRoles.some(role => ['admin', 'editor', 'author'].includes(role));
 
       if (!hasAdminAccess) {
@@ -98,7 +117,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Transform frontend data to backend format
       const backendData = {
         contentType: 'stotra',
-        canonicalSlug: slug,
+        canonicalSlug: stotraData.canonicalSlug || slug, // Use provided canonicalSlug or fallback to slug param
+        stotraTitle: stotraData.stotraTitle || null,
         status: stotraData.status || 'draft',
         imageUrl: stotraData.featuredImage || null,
         categories: {
@@ -110,7 +130,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           [stotraData.locale]: {
             title: stotraData.title,
             seoTitle: stotraData.seoTitle || null,
-            videoId: null,
+            videoId: stotraData.videoId || null,
             stotra: stotraData.stotra,
             stotraMeaning: stotraData.stotraMeaning || null,
             body: null, // Stotras don't use body field

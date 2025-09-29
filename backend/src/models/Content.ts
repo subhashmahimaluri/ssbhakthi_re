@@ -35,6 +35,7 @@ export interface IContent extends Document {
   id: string;
   contentType: ContentType;
   canonicalSlug: string;
+  stotraTitle?: string | null; // Common title for all translations (used for Stotras)
   categories: ICategories;
   imageUrl?: string | null;
   status: ContentStatus;
@@ -92,6 +93,22 @@ const ContentSchema = new Schema<IContent>(
           return /^[a-z0-9-]+$/.test(v);
         },
         message: 'canonicalSlug must contain only lowercase letters, numbers, and hyphens',
+      },
+    },
+    stotraTitle: {
+      type: String,
+      default: null,
+      trim: true,
+      maxlength: 200,
+      validate: {
+        validator: function (this: IContent, v: string | null) {
+          // stotraTitle is only relevant for stotra content type
+          if (this.contentType === 'article' && v) {
+            return false;
+          }
+          return true;
+        },
+        message: 'stotraTitle should only be used for stotra content type',
       },
     },
     categories: {
