@@ -44,6 +44,17 @@ export default function MyAccount() {
           <Link href="/my-account" className="gr-hover-text-orange fw-bold gr-text-6 text-black">
             My Account
           </Link>
+          {/* Show admin link if user has admin access */}
+          {session.user?.roles?.some((role: string) =>
+            ['admin', 'editor', 'author'].includes(role)
+          ) && (
+            <>
+              <span className="mx-2">|</span>
+              <Link href="/admin" className="gr-hover-text-orange fw-bold gr-text-6 text-black">
+                Admin
+              </Link>
+            </>
+          )}
           <span className="mx-2">|</span>
           <Link
             href="#"

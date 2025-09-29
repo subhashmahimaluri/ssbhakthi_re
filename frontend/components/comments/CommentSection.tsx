@@ -157,8 +157,16 @@ const CommentItem = ({
     setIsUpdating(true);
     setUpdateError(null);
 
+    // Create AbortController for request lifecycle management
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 15000); // 15 second timeout
+
     try {
-      const token = authToken || 'dev-token-for-testing'; // Use passed token or fallback
+      const token = authToken;
+
+      if (!token || token === 'dev-token-for-testing') {
+        throw new Error('Authentication required to update comment.');
+      }
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_REST_URL}/rest/comments/${comment.id}`,
@@ -169,20 +177,45 @@ const CommentItem = ({
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ text: editText.trim() }),
+          signal: abortController.signal, // Add abort signal
         }
       );
 
+      clearTimeout(timeoutId); // Clear timeout if request completes
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to update comment');
+        let errorMessage = 'Failed to update comment';
+
+        if (response.status === 401) {
+          errorMessage = 'Authentication expired. Please sign in again.';
+        } else if (response.status === 403) {
+          errorMessage = 'You do not have permission to update this comment.';
+        } else if (response.status === 404) {
+          errorMessage = 'Comment not found.';
+        } else {
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.error?.message || errorMessage;
+          } catch (parseError) {
+            console.error('Failed to parse error response:', parseError);
+          }
+        }
+
+        throw new Error(errorMessage);
       }
 
       setIsEditing(false);
       setUpdateError(null);
       onCommentUpdated(); // Refresh comments list
     } catch (error) {
+      clearTimeout(timeoutId); // Clear timeout on error
       console.error('Error updating comment:', error);
-      setUpdateError(error instanceof Error ? error.message : 'Failed to update comment');
+
+      if (error instanceof Error && error.name === 'AbortError') {
+        setUpdateError('Request timed out. Please check your connection and try again.');
+      } else {
+        setUpdateError(error instanceof Error ? error.message : 'Failed to update comment');
+      }
     } finally {
       setIsUpdating(false);
     }
@@ -384,25 +417,57 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
 
   // Fetch comments function
   const fetchComments = useCallback(async () => {
+    // Create AbortController for request lifecycle management
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 10000); // 10 second timeout
+
     try {
       setIsLoadingComments(true);
       setCommentsError(null);
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_REST_URL}/rest/comments/${canonicalSlug}?lang=${locale}&limit=20&offset=0`
+        `${process.env.NEXT_PUBLIC_BACKEND_REST_URL}/rest/comments/${canonicalSlug}?lang=${locale}&limit=20&offset=0`,
+        {
+          signal: abortController.signal, // Add abort signal
+        }
       );
 
+      clearTimeout(timeoutId); // Clear timeout if request completes
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to fetch comments');
+        let errorMessage = 'Failed to fetch comments';
+
+        if (response.status === 404) {
+          errorMessage = 'Content not found.';
+        } else if (response.status >= 500) {
+          errorMessage = 'Server error. Please try again later.';
+        } else {
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.error?.message || errorMessage;
+          } catch (parseError) {
+            console.error('Failed to parse error response:', parseError);
+          }
+        }
+
+        throw new Error(errorMessage);
       }
 
       const data: CommentsResponse = await response.json();
       setComments(data.items);
       setTotalComments(data.total);
     } catch (error) {
+      clearTimeout(timeoutId); // Clear timeout on error
       console.error('Error fetching comments:', error);
-      setCommentsError(error instanceof Error ? error.message : 'Failed to load comments');
+
+      let errorMessage = 'Failed to load comments';
+      if (error instanceof Error && error.name === 'AbortError') {
+        errorMessage = 'Request timed out. Please check your connection and try again.';
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      setCommentsError(errorMessage);
       setComments([]);
       setTotalComments(0);
     } finally {
@@ -453,8 +518,16 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
     setIsDeleting(true);
     setShowDeleteModal(false);
 
+    // Create AbortController for request lifecycle management
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 15000); // 15 second timeout
+
     try {
-      const authToken = session?.accessToken || 'dev-token-for-testing';
+      const authToken = session?.accessToken;
+
+      if (!authToken || authToken === 'dev-token-for-testing') {
+        throw new Error('Authentication required to delete comment.');
+      }
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_REST_URL}/rest/comments/${commentToDelete.id}`,
@@ -463,18 +536,46 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
           headers: {
             Authorization: `Bearer ${authToken}`,
           },
+          signal: abortController.signal, // Add abort signal
         }
       );
 
+      clearTimeout(timeoutId); // Clear timeout if request completes
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to delete comment');
+        let errorMessage = 'Failed to delete comment';
+
+        if (response.status === 401) {
+          errorMessage = 'Authentication expired. Please sign in again.';
+        } else if (response.status === 403) {
+          errorMessage = 'You do not have permission to delete this comment.';
+        } else if (response.status === 404) {
+          errorMessage = 'Comment not found.';
+        } else {
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.error?.message || errorMessage;
+          } catch (parseError) {
+            console.error('Failed to parse error response:', parseError);
+          }
+        }
+
+        throw new Error(errorMessage);
       }
 
       handleCommentDeleted();
     } catch (error) {
+      clearTimeout(timeoutId); // Clear timeout on error
       console.error('Error deleting comment:', error);
-      setCommentsError(error instanceof Error ? error.message : 'Failed to delete comment');
+
+      let errorMessage = 'Failed to delete comment';
+      if (error instanceof Error && error.name === 'AbortError') {
+        errorMessage = 'Request timed out. Please check your connection and try again.';
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      setCommentsError(errorMessage);
     } finally {
       setIsDeleting(false);
       setCommentToDelete(null);
@@ -501,6 +602,10 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
     setSubmissionError(null); // Clear previous errors
     setSubmissionSuccess(false); // Clear previous success state
 
+    // Create AbortController for request lifecycle management
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 30000); // 30 second timeout
+
     try {
       const requestBody = {
         canonicalSlug,
@@ -513,17 +618,22 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
       console.log('Content type:', contentType);
       console.log('Canonical slug:', canonicalSlug);
 
-      // For development testing, use a dummy token if no real token exists
-      const authToken = session.accessToken || 'dev-token-for-testing';
+      // Check for valid session token
+      if (!session.accessToken) {
+        throw new Error('Authentication required. Please sign in again.');
+      }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_REST_URL}/rest/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`,
+          Authorization: `Bearer ${session.accessToken}`,
         },
         body: JSON.stringify(requestBody),
+        signal: abortController.signal, // Add abort signal for request lifecycle management
       });
+
+      clearTimeout(timeoutId); // Clear timeout if request completes
 
       if (!response.ok) {
         let errorMessage = 'Failed to submit comment';
@@ -534,10 +644,31 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
             statusText: response.statusText,
             errorData,
           });
-          errorMessage = errorData.error?.message || errorData.message || errorMessage;
+
+          // Handle specific error cases
+          if (response.status === 401) {
+            errorMessage = 'Authentication expired. Please sign in again.';
+          } else if (response.status === 403) {
+            errorMessage = 'You do not have permission to post comments.';
+          } else if (response.status === 429) {
+            errorMessage = 'Too many requests. Please wait before trying again.';
+          } else {
+            errorMessage = errorData.error?.message || errorData.message || errorMessage;
+          }
         } catch (parseError) {
           console.error('Failed to parse error response:', parseError);
           console.error('Raw response status:', response.status, response.statusText);
+
+          // Provide user-friendly error based on status code
+          if (response.status === 401) {
+            errorMessage = 'Authentication expired. Please sign in again.';
+          } else if (response.status === 403) {
+            errorMessage = 'You do not have permission to post comments.';
+          } else if (response.status === 429) {
+            errorMessage = 'Too many requests. Please wait before trying again.';
+          } else if (response.status >= 500) {
+            errorMessage = 'Server error. Please try again later.';
+          }
         }
         throw new Error(errorMessage);
       }
@@ -577,9 +708,13 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
         setSubmissionSuccess(false);
       }, 4000);
     } catch (error) {
+      clearTimeout(timeoutId); // Clear timeout on error
       console.error('Error submitting comment:', error);
-      // Set a user-friendly error message for display
-      if (error instanceof Error) {
+
+      // Handle AbortError specifically
+      if (error instanceof Error && error.name === 'AbortError') {
+        setSubmissionError('Request timed out. Please check your connection and try again.');
+      } else if (error instanceof Error) {
         setSubmissionError(error.message);
       } else {
         setSubmissionError('Failed to submit comment. Please try again.');
@@ -902,7 +1037,22 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
                     <strong>Error!</strong> {submissionError}
                     <br />
                     <small className="text-danger-emphasis">
-                      Please try again or contact support if the issue persists.
+                      {submissionError.includes('Authentication') ||
+                      submissionError.includes('sign in') ? (
+                        <>
+                          Please{' '}
+                          <button
+                            className="btn btn-link text-decoration-underline text-danger-emphasis p-0"
+                            style={{ fontSize: 'inherit', verticalAlign: 'baseline' }}
+                            onClick={handleLogin}
+                          >
+                            sign in again
+                          </button>{' '}
+                          to continue.
+                        </>
+                      ) : (
+                        'Please try again or contact support if the issue persists.'
+                      )}
                     </small>
                   </div>
                 </div>

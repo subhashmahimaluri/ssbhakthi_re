@@ -77,6 +77,41 @@ export const GET_ARTICLE = gql`
   }
 `;
 
+export const GET_ARTICLE_BY_SLUG = gql`
+  query GetArticleBySlug($slug: String!, $locale: String) {
+    articleBySlug(slug: $slug, locale: $locale) {
+      id
+      title
+      slug
+      summary
+      body
+      status
+      locale
+      publishedAt
+      scheduledAt
+      seoTitle
+      seoDescription
+      seoKeywords
+      featuredImage
+      createdAt
+      updatedAt
+      author {
+        id
+        name
+        email
+      }
+      categories {
+        id
+        name
+      }
+      tags {
+        id
+        name
+      }
+    }
+  }
+`;
+
 export const CREATE_ARTICLE = gql`
   mutation CreateArticle($input: CreateArticleInput!) {
     createArticle(input: $input) {

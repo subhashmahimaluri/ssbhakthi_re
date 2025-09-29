@@ -63,7 +63,7 @@ function sanitizeText(text: string): string {
 // Rate limiting for POST requests (comment creation)
 const commentRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 comment submissions per windowMs
+  max: process.env['NODE_ENV'] === 'development' ? 50 : 5, // Higher limit for development
   message: {
     error: 'Too many comments submitted',
     code: 'RATE_LIMIT_EXCEEDED',
