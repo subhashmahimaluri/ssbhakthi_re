@@ -2,6 +2,7 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles/globals.scss';
 
+import { AvailableLanguagesProvider } from '@/context/AvailableLanguagesContext';
 import { LocationProvider } from '@/context/LocationContext';
 import { SessionProvider } from 'next-auth/react';
 import type { AppProps } from 'next/app';
@@ -51,7 +52,9 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <SessionProvider session={pageProps.session}>
       <LocationProvider>
-        <Component {...pageProps} />
+        <AvailableLanguagesProvider>
+          <Component {...pageProps} />
+        </AvailableLanguagesProvider>
       </LocationProvider>
     </SessionProvider>
   );

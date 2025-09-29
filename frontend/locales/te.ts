@@ -294,6 +294,6 @@ export const te = {
   },
   stotra: {
     stotra: 'స్తోత్రం',
-    stotra_meaning: 'స్తోత్ర అర్థం',
+    stotra_meaning: 'అర్థం',
   },
 };

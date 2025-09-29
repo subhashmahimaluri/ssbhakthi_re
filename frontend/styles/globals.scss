@@ -270,7 +270,7 @@ body {
 .stotra-meaning,
 .stotra-body {
   line-height: 1.8;
-  font-size: 1.1rem;
+  font-size: 1.1875rem;
 
   p {
     margin-bottom: 1rem;
@@ -279,6 +279,12 @@ body {
   br {
     line-height: 2.5;
   }
+}
+
+.left-container h1 {
+  font-size: 36px;
+  color: #000 !important;
+  font-weight: 700;
 }
 
 // Stotra Editor Card Styles
@@ -335,13 +341,6 @@ body {
 }
 
 .stotra-content {
-  background-color: #f8f9fa;
-  padding: 2rem;
-  border-radius: 8px;
-  border-left: 4px solid $orange;
-  font-family: 'Times New Roman', serif;
-  text-align: center;
-
   p {
     font-size: 1.2rem;
     color: #2c3e50;
@@ -1123,4 +1122,107 @@ a {
 
 .pt-15 {
   padding-top: 9rem !important;
+}
+
+.instance-te {
+  font-family:
+    Hind Guntur,
+    sans-serif;
+  font-weight: 500;
+  P {
+    font-size: 1.1875rem;
+  }
+}
+
+.border {
+  border: 1px solid #e7e9ed !important;
+}
+
+.gr-text-7 {
+  font-size: calc(1.25625rem + 0.075vw);
+  letter-spacing: -0.5px;
+  line-height: 1.5;
+}
+
+.gr-text-9 {
+  font-size: 1.0625rem;
+  letter-spacing: -0.2px;
+  line-height: 1.71;
+}
+
+.btn-link.with-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.text-blackish-blue {
+  --bs-text-opacity: 1;
+  color: #000 !important;
+}
+
+.py-6 {
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+}
+
+.btn-link.with-icon i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  i {
+    margin-left: 16px;
+    transition: 0.4s;
+  }
+  &:hover {
+    i {
+      margin-left: 25px;
+    }
+  }
+}
+
+.min-height-px-280 {
+  min-height: 280px;
+}
+
+// Video Placeholder Styles
+.video-placeholder {
+  width: 100%;
+  aspect-ratio: 16/9; /* Same aspect ratio as 720x405 video thumbnail */
+  background: linear-gradient(135deg, $orange 0%, $blackish-blue 100%);
+  color: white;
+  position: relative;
+  overflow: hidden;
+
+  .video-icon-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 3rem;
+    z-index: 2;
+
+    svg {
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+      transition: transform 0.3s ease;
+    }
+
+    &:hover svg {
+      transform: scale(1.1);
+    }
+  }
+
+  .video-title-overlay {
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+    z-index: 2;
+
+    span {
+      font-size: 0.9rem;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+      display: block;
+      text-align: center;
+    }
+  }
 }

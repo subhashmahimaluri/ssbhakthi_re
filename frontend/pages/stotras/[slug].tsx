@@ -2,7 +2,9 @@
 
 import Layout from '@/components/Layout/Layout';
 import CommentSection from '@/components/comments/CommentSection';
+import { useAvailableLanguages } from '@/context/AvailableLanguagesContext';
 import { useTranslation } from '@/hooks/useTranslation';
+import { Locale } from '@/locales';
 import { getStotraDetailMetaData } from '@/utils/seo';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -90,6 +92,7 @@ const YouTubeEmbed = ({ videoId }: { videoId: string }) => {
 export default function StotraPage() {
   const { t, locale } = useTranslation();
   const { data: userSession } = useSession();
+  const { setAvailableLanguages, resetAvailableLanguages } = useAvailableLanguages();
   const router = useRouter();
   const { slug } = router.query;
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -98,6 +101,7 @@ export default function StotraPage() {
   const [stotra, setStotra] = useState<StotraDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFallbackLanguage, setIsFallbackLanguage] = useState(false);
 
   // Memoized function to prevent unnecessary re-renders
   const fetchStotra = useCallback(async () => {
@@ -124,6 +128,7 @@ export default function StotraPage() {
     try {
       setLoading(true);
       setError(null);
+      setIsFallbackLanguage(false);
 
       const apiUrl = `http://localhost:4000/rest/stotras/${slug}?lang=${locale}`;
       console.log('Fetching stotra from:', apiUrl);
@@ -132,8 +137,48 @@ export default function StotraPage() {
         signal: abortControllerRef.current.signal,
       });
 
-      // If stotra not found (404), redirect to 404 page
+      // If stotra not found (404), check if it's a translation issue
       if (response.status === 404) {
+        try {
+          // Try to get the error details from the response
+          const errorData = await response.json();
+
+          // If it's a translation not found error, try to fetch with default language
+          if (
+            errorData.error?.code === 'TRANSLATION_NOT_FOUND' &&
+            errorData.error?.availableLanguages
+          ) {
+            // Set available languages from error response
+            setAvailableLanguages(errorData.error.availableLanguages as Locale[]);
+
+            // If current locale is not available, try with the first available language
+            if (!errorData.error.availableLanguages.includes(locale)) {
+              const fallbackLang = errorData.error.availableLanguages[0];
+              const fallbackUrl = `http://localhost:4000/rest/stotras/${slug}?lang=${fallbackLang}`;
+
+              const fallbackResponse = await fetch(fallbackUrl, {
+                signal: abortControllerRef.current.signal,
+              });
+
+              if (fallbackResponse.ok) {
+                const fallbackData: StotraDetail = await fallbackResponse.json();
+
+                // Only update state if component is still mounted and request wasn't aborted
+                if (!abortControllerRef.current?.signal.aborted) {
+                  setStotra(fallbackData);
+                  setIsFallbackLanguage(true);
+                  setError(null);
+                }
+                return;
+              }
+            }
+          }
+        } catch (jsonError) {
+          // If we can't parse the error response, treat as normal 404
+          console.warn('Could not parse 404 error response:', jsonError);
+        }
+
+        // If no fallback worked or it's a true 404, redirect to 404 page
         hasRedirectedRef.current = true;
         router.push('/404');
         return;
@@ -148,6 +193,12 @@ export default function StotraPage() {
       // Only update state if component is still mounted and request wasn't aborted
       if (!abortControllerRef.current?.signal.aborted) {
         setStotra(data);
+
+        // Set available languages for the language switcher
+        if (data.meta?.availableLanguages) {
+          setAvailableLanguages(data.meta.availableLanguages as Locale[]);
+        }
+
         setError(null);
       }
     } catch (err) {
@@ -170,7 +221,7 @@ export default function StotraPage() {
         setLoading(false);
       }
     }
-  }, [slug, locale, router]);
+  }, [slug, locale, router]); // Removed setAvailableLanguages to prevent infinite re-renders
 
   useEffect(() => {
     // Reset redirect flag when dependencies change
@@ -182,14 +233,16 @@ export default function StotraPage() {
     }
   }, [router.isReady, slug, locale, fetchStotra]);
 
-  // Cleanup function to abort ongoing requests
+  // Cleanup function to abort ongoing requests and reset available languages
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
+      // Reset available languages when leaving this page
+      resetAvailableLanguages();
     };
-  }, []);
+  }, []); // Empty dependency array since resetAvailableLanguages is now stable
 
   // Show loading state while router is not ready or while fetching
   if (!router.isReady || loading) {
@@ -344,6 +397,27 @@ export default function StotraPage() {
               )}
             </div>
 
+            {/* Fallback Language Warning */}
+            {isFallbackLanguage && (
+              <div className="alert alert-info mb-4" role="alert">
+                <i className="bi bi-info-circle me-2"></i>
+                This content is not available in{' '}
+                {locale === 'en' ? 'English' : 'your selected language'}. Showing in{' '}
+                {translation.title && stotra.meta?.requestedLanguage
+                  ? stotra.meta.requestedLanguage === 'te'
+                    ? 'Telugu'
+                    : stotra.meta.requestedLanguage === 'en'
+                      ? 'English'
+                      : stotra.meta.requestedLanguage === 'hi'
+                        ? 'Hindi'
+                        : stotra.meta.requestedLanguage === 'kn'
+                          ? 'Kannada'
+                          : stotra.meta.requestedLanguage
+                  : 'available language'}{' '}
+                instead.
+              </div>
+            )}
+
             {/* YouTube Video Embed (async load) */}
             {translation.videoId && (
               <div className="mb-4">
@@ -354,7 +428,6 @@ export default function StotraPage() {
             {/* Stotra Content */}
             {translation.stotra && (
               <div className="mb-4">
-                <h2 className="h4 text-secondary mb-3">{t.stotra.stotra}</h2>
                 <div
                   className="stotra-content"
                   dangerouslySetInnerHTML={{ __html: translation.stotra }}
