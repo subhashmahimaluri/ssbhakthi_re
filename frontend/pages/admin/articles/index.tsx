@@ -44,8 +44,9 @@ export default function ArticlesPage({ userRoles }: ArticlesPageProps) {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [filters, setFilters] = useState({
-    status: '',
+    status: 'all', // Changed to show all statuses by default
     search: '',
     locale: 'te',
   });
@@ -57,7 +58,7 @@ export default function ArticlesPage({ userRoles }: ArticlesPageProps) {
     try {
       const params = new URLSearchParams();
       if (filters.locale) params.append('locale', filters.locale);
-      if (filters.status) params.append('status', filters.status);
+      if (filters.status && filters.status !== 'all') params.append('status', filters.status);
       if (filters.search) params.append('search', filters.search);
       params.append('limit', '50'); // Show more articles in admin
 
@@ -83,6 +84,45 @@ export default function ArticlesPage({ userRoles }: ArticlesPageProps) {
 
   const handleFilterChange = (field: string, value: string) => {
     setFilters(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleDeleteArticle = async (slug: string, title: string) => {
+    if (
+      !confirm(
+        `Are you sure you want to delete the article "${title}"? This action cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    setDeleting(slug);
+    try {
+      const response = await fetch('/api/articles/delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ slug }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete article');
+      }
+
+      // Remove article from local state
+      setArticles(prev => prev.filter(article => article.slug !== slug));
+
+      // Show success message (you could use a toast library here)
+      alert('Article deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting article:', error);
+      alert(
+        `Failed to delete article: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    } finally {
+      setDeleting(null);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -176,7 +216,7 @@ export default function ArticlesPage({ userRoles }: ArticlesPageProps) {
                     value={filters.status}
                     onChange={e => handleFilterChange('status', e.target.value)}
                   >
-                    <option value="">All Status</option>
+                    <option value="all">All Status</option>
                     <option value="published">Published</option>
                     <option value="draft">Draft</option>
                     <option value="scheduled">Scheduled</option>
@@ -206,7 +246,7 @@ export default function ArticlesPage({ userRoles }: ArticlesPageProps) {
               <div className="py-5 text-center">
                 <h5>No Articles Found</h5>
                 <p className="text-muted">
-                  {filters.search || filters.status || filters.locale
+                  {filters.search || (filters.status && filters.status !== 'all') || filters.locale
                     ? 'No articles match your current filters.'
                     : "You haven't created any articles yet."}
                 </p>
@@ -261,13 +301,41 @@ export default function ArticlesPage({ userRoles }: ArticlesPageProps) {
                               Edit
                             </Button>
                           </Link>
-                          {article.status === 'published' && (
-                            <Link href={`/articles/${article.slug}`} passHref>
-                              <Button variant="outline-secondary" size="sm" target="_blank">
-                                View
-                              </Button>
-                            </Link>
-                          )}
+
+                          {/* View button for all articles */}
+                          <Link
+                            href={
+                              article.status === 'published'
+                                ? `/articles/${article.slug}`
+                                : `/admin/articles/${article.slug}/preview`
+                            }
+                            passHref
+                          >
+                            <Button
+                              variant="outline-secondary"
+                              size="sm"
+                              target={article.status === 'published' ? '_blank' : '_self'}
+                            >
+                              {article.status === 'published' ? 'View' : 'Preview'}
+                            </Button>
+                          </Link>
+
+                          {/* Delete button */}
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            disabled={deleting === article.slug}
+                            onClick={() => handleDeleteArticle(article.slug, article.title)}
+                          >
+                            {deleting === article.slug ? (
+                              <>
+                                <Spinner animation="border" size="sm" className="me-1" />
+                                Deleting...
+                              </>
+                            ) : (
+                              'Delete'
+                            )}
+                          </Button>
                         </div>
                       </td>
                     </tr>

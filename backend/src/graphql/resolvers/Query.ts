@@ -193,7 +193,7 @@ export const Query: QueryResolvers<GraphQLContext> = {
     return MediaAsset.find({ isPublic: true }).sort({ createdAt: -1 }).skip(offset).limit(limit);
   },
 
-  comments: async (_, { canonicalSlug, lang = 'en', limit = 20, offset = 0 }) => {
+  comments: async (_: any, { canonicalSlug, lang = 'en', limit = 20, offset = 0 }: any) => {
     // Validate language
     const validLangs = ['en', 'te', 'hi', 'kn'];
     if (!validLangs.includes(lang)) {

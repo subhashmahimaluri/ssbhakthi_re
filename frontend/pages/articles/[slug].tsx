@@ -4,9 +4,11 @@ import Layout from '@/components/Layout/Layout';
 import CommentSection from '@/components/comments/CommentSection';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getArticleDetailMetaData } from '@/utils/seo';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Col, Row } from 'react-bootstrap';
+import { Button, Col, Row } from 'react-bootstrap';
 
 interface ArticleTranslation {
   title: string;
@@ -85,6 +87,7 @@ const YouTubeEmbed = ({ videoId }: { videoId: string }) => {
 
 export default function ArticlePage() {
   const { t, locale } = useTranslation();
+  const { data: session } = useSession();
   const router = useRouter();
   const { slug } = router.query;
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -324,6 +327,20 @@ export default function ArticlePage() {
           <div className="left-container shadow-1 px-md-10 bg-white px-5 py-5 text-black">
             {/* Title */}
             <h1 className="text-primary mb-4 text-center">{translation.title}</h1>
+
+            {/* Admin Edit Button - Only show for admin users */}
+            {session?.user?.roles?.some((role: string) =>
+              ['admin', 'editor', 'author'].includes(role)
+            ) && (
+              <div className="d-flex justify-content-end mb-3">
+                <Link href={`/admin/articles/${article.canonicalSlug}/edit`} passHref>
+                  <Button variant="outline-primary" size="sm">
+                    <i className="bi bi-pencil me-1"></i>
+                    Edit Article
+                  </Button>
+                </Link>
+              </div>
+            )}
 
             {/* YouTube Video Embed (async load) */}
             {translation.videoId && (

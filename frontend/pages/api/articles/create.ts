@@ -105,7 +105,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     res.json({
       success: true,
-      article: createdArticle,
+      article: createdArticle.article,
       message: 'Article created successfully',
     });
   } catch (error) {

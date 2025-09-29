@@ -234,7 +234,7 @@ export const Mutation: MutationResolvers<GraphQLContext> = {
   },
 
   // Comment mutations
-  addComment: async (_, { canonicalSlug, lang, text }, { user }) => {
+  addComment: async (_: any, { canonicalSlug, lang, text }: any, { user }: any) => {
     if (!user) {
       throw new GraphQLError('Authentication required', {
         extensions: { code: 'UNAUTHENTICATED' },

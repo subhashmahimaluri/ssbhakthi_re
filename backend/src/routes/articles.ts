@@ -1,4 +1,5 @@
 import { Request, Response, Router } from 'express';
+import mongoose from 'mongoose';
 import { Content, LanguageCode } from '../models/Content';
 
 const router: Router = Router();
@@ -14,7 +15,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     console.log('📋 Articles API called with query:', req.query);
 
-    const { lang = 'en', limit = '50', offset = '0', status = 'published' } = req.query;
+    const { lang = 'en', limit = '50', offset = '0', status } = req.query;
 
     const languageCode = getLanguageCode(lang as string);
     const limitNum = Math.min(parseInt(limit as string) || 50, 100); // Max 100
@@ -27,7 +28,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       contentType: 'article',
     };
 
-    if (status) {
+    // Only filter by status if explicitly provided
+    if (status && status !== 'all') {
       query.status = status;
     }
 
@@ -193,24 +195,46 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Create new article
-    const newArticle = new Content({
+    // Create new article using direct MongoDB insertion
+    const currentTime = new Date();
+
+    console.log('🗨️ Debugging - translations data:', JSON.stringify(translations, null, 2));
+
+    // Use direct MongoDB insertion to bypass Mongoose
+    console.log('🗨️ Using direct MongoDB insertion to bypass Mongoose...');
+
+    const db = mongoose.connection.db;
+    if (!db) {
+      throw new Error('Database connection not established');
+    }
+
+    const contentsCollection = db.collection('contents');
+
+    const articleDoc = {
       contentType,
       canonicalSlug,
       status,
       imageUrl,
       categories: categories || { typeIds: [], devaIds: [], byNumberIds: [] },
       translations,
-    });
+      createdAt: currentTime,
+      updatedAt: currentTime,
+    };
 
-    console.log(
-      '🔍 About to save article with data:',
-      JSON.stringify(newArticle.toObject(), null, 2)
-    );
+    console.log('🗨️ Final document to insert:', JSON.stringify(articleDoc, null, 2));
 
-    const savedArticle = await newArticle.save();
+    const result = await contentsCollection.insertOne(articleDoc);
 
-    console.log('✅ Article created successfully:', savedArticle.canonicalSlug);
+    console.log('✅ Article created successfully with ID:', result.insertedId);
+
+    // Fetch the created document to return
+    const savedArticle = await contentsCollection.findOne({ _id: result.insertedId });
+
+    if (!savedArticle) {
+      throw new Error('Failed to retrieve created article');
+    }
+
+    console.log('✅ Article created successfully:', savedArticle['canonicalSlug']);
 
     res.status(201).json({
       success: true,
@@ -220,6 +244,14 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
   } catch (error) {
     console.error('Error creating article:', error);
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+
+    // Additional debugging for MongoDB validation errors
+    if (error instanceof Error && 'errInfo' in error) {
+      console.error('MongoDB error info:', (error as any).errInfo);
+    }
+    if (error instanceof Error && 'code' in error) {
+      console.error('MongoDB error code:', (error as any).code);
+    }
 
     if (error instanceof Error && error.name === 'ValidationError') {
       console.error('Validation details:', error.message);
@@ -314,6 +346,46 @@ router.put('/:canonicalSlug', async (req: Request, res: Response): Promise<void>
         },
       });
     }
+  }
+});
+
+// DELETE /rest/articles/:canonicalSlug - Delete article
+router.delete('/:canonicalSlug', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { canonicalSlug } = req.params;
+    console.log(`🗑️ Deleting article '${canonicalSlug}'`);
+
+    // Find and delete article
+    const deletedArticle = await Content.findOneAndDelete({
+      canonicalSlug,
+      contentType: 'article',
+    });
+
+    if (!deletedArticle) {
+      res.status(404).json({
+        error: {
+          message: `Article with slug '${canonicalSlug}' not found`,
+          code: 'NOT_FOUND',
+        },
+      });
+      return;
+    }
+
+    console.log('✅ Article deleted successfully:', deletedArticle.canonicalSlug);
+
+    res.json({
+      success: true,
+      message: 'Article deleted successfully',
+      deletedSlug: canonicalSlug,
+    });
+  } catch (error) {
+    console.error('Error deleting article:', error);
+    res.status(500).json({
+      error: {
+        message: 'Failed to delete article',
+        code: 'INTERNAL_ERROR',
+      },
+    });
   }
 });
 

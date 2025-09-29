@@ -245,16 +245,6 @@ export default function ArticleEditor({ articleId }: ArticleEditorProps) {
 
       let errorMessage = `Failed to save article: ${error instanceof Error ? error.message : 'Unknown error'}`;
 
-      // Provide specific guidance for creation vs editing issues
-      if (
-        !articleId &&
-        error instanceof Error &&
-        error.message.includes('Failed to create article')
-      ) {
-        errorMessage =
-          'Article creation is currently experiencing database validation issues. The article editing feature works correctly. Please try editing an existing article instead, or contact the administrator for assistance with creating new articles.';
-      }
-
       setErrors([errorMessage]);
     } finally {
       setSaving(false);

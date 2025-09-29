@@ -51,7 +51,8 @@ export default function Articles() {
   const fetchArticles = async () => {
     try {
       setLoading(true);
-      const apiUrl = `http://localhost:4000/rest/articles?lang=${locale}`;
+      // Only show published articles for public users
+      const apiUrl = `http://localhost:4000/rest/articles?lang=${locale}&status=published`;
       console.log('Fetching articles from:', apiUrl);
 
       const response = await fetch(apiUrl);

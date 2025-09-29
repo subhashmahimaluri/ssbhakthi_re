@@ -4,6 +4,15 @@ import { authOptions } from '../auth/[...nextauth]';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:4000';
 
+// Helper function to generate slug from title
+function generateSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .trim();
+}
+
 // Helper function to get effective session (with dev bypass)
 async function getEffectiveSession(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);

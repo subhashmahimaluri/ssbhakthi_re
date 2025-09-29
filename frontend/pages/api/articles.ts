@@ -33,9 +33,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (limit) params.append('limit', limit as string);
     if (offset) params.append('offset', offset as string);
 
-    // For admin, we want to see all articles regardless of status
-    if (!status) {
-      // Don't filter by status in admin - show all
+    // For admin, we want to see all articles by default unless status is specified
+    if (status && status !== 'all') {
+      params.append('status', status as string);
     }
 
     const backendUrl = `${BACKEND_URL}/rest/articles?${params.toString()}`;
