@@ -54,7 +54,6 @@ const FestivalTile: React.FC<FestivalTileProps> = ({ festival, onClick }) => {
     } else {
       // Future: Navigate to festival detail page
       // router.push(`/calendar/festivals/${festival.id}`);
-      console.log(`Clicked on festival: ${festival.nameEnglish}`);
     }
   };
 

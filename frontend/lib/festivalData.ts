@@ -356,7 +356,6 @@ export const calculateFestivalDates = (
         calculatedFestivals.push(calculatedFestival);
       }
     } catch (error) {
-      console.log(`Using estimated date for festival: ${festival.nameEnglish}`);
       // Add with estimated date to avoid missing festivals
       const fallbackDate = getEstimatedDateForFestival(festival, year);
       calculatedFestivals.push({

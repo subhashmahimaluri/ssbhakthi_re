@@ -75,7 +75,6 @@ const CKEditor = forwardRef<CKEditorRef, CKEditorProps>(
                       }
                     })
                     .catch(error => {
-                      console.error('Upload error:', error);
                       reject(error);
                     });
                 });
@@ -96,7 +95,6 @@ const CKEditor = forwardRef<CKEditorRef, CKEditorProps>(
 
           const editorElement = editorElementRef.current;
           if (!editorElement) {
-            console.error('Editor element not found');
             return;
           }
 
@@ -160,9 +158,7 @@ const CKEditor = forwardRef<CKEditorRef, CKEditorProps>(
           if (onReady) {
             onReady(editor);
           }
-        } catch (error) {
-          console.error('CKEditor initialization failed:', error);
-        }
+        } catch (error) {}
       };
 
       initializeEditor();

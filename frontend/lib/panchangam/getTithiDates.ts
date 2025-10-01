@@ -1,7 +1,7 @@
+import { YexaaCalendar } from './yexaaCalendar';
 import { YexaaLocalConstant } from './yexaaLocalConstant';
 import { YexaaPanchangImpl } from './yexaaPanchangImpl';
 import { YexaaSunMoonTimer } from './yexaaSunMoonTimer';
-import { YexaaCalendar } from './yexaaCalendar';
 
 export function getTithiDates(year: number, tithiIno: number, lat: number, lng: number) {
   const results: any[] = [];
@@ -239,7 +239,6 @@ export function getTithiDates(year: number, tithiIno: number, lat: number, lng: 
       // Move to next day
       currentDate.setDate(currentDate.getDate() + 1);
     } catch (error) {
-      console.error(`Error processing date ${currentDate}:`, error);
       currentDate.setDate(currentDate.getDate() + 1);
     }
   }

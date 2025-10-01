@@ -66,7 +66,6 @@ export default function TeluguCalendarWithFestivals() {
     try {
       return calculateFestivalDates(currentYear, lat || 17.385044, lng || 78.486671);
     } catch (error) {
-      console.log('Using fallback festivals for performance');
       return [];
     }
   }, [currentYear, lat, lng]);
@@ -75,7 +74,6 @@ export default function TeluguCalendarWithFestivals() {
     try {
       return calculateVrathDates(currentYear, lat || 17.385044, lng || 78.486671);
     } catch (error) {
-      console.log('Using fallback vraths for performance');
       return [];
     }
   }, [currentYear, lat, lng]);
@@ -124,7 +122,6 @@ export default function TeluguCalendarWithFestivals() {
         vraths: events.vraths,
       };
     } catch (error) {
-      console.error('Error calculating panchang for', date, error);
       const events = getEventsForDate(date);
       return {
         sunrise: '--:--',
@@ -229,7 +226,6 @@ export default function TeluguCalendarWithFestivals() {
       const days = generateCalendarDays(currentDate);
       setCalendarDays(days);
     } catch (err) {
-      console.error('Error generating calendar:', err);
       setError('Failed to load calendar data');
       setCalendarDays([]);
     } finally {

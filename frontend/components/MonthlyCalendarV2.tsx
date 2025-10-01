@@ -106,7 +106,6 @@ export default function MonthlyCalendar() {
         isFestival,
       };
     } catch (error) {
-      console.error('Error calculating panchang for', date, error);
       return {
         sunrise: '--:--',
         sunset: '--:--',
@@ -179,7 +178,6 @@ export default function MonthlyCalendar() {
         moon,
       };
     } catch (error) {
-      console.error('Error calculating day details for', date, error);
       return null;
     }
   };
@@ -254,7 +252,6 @@ export default function MonthlyCalendar() {
       const calculatedVraths = calculateVrathDates(currentYear, validLat, validLng);
       setVraths(calculatedVraths);
     } catch (err) {
-      console.error('Error loading festival/vrath data:', err);
       setFestivals([]);
       setVraths([]);
     }
@@ -270,18 +267,9 @@ export default function MonthlyCalendar() {
     setError(null);
 
     try {
-      console.log(
-        'Generating calendar for:',
-        format(currentDate, 'MMMM yyyy'),
-        'at coordinates:',
-        validLat,
-        validLng
-      );
       const days = generateCalendarDays(currentDate);
-      console.log('Generated', days.length, 'calendar days');
       setCalendarDays(days);
     } catch (err) {
-      console.error('Error generating calendar:', err);
       setError('Failed to load calendar data');
       setCalendarDays([]);
     } finally {
@@ -298,7 +286,6 @@ export default function MonthlyCalendar() {
         setDayDetails(details);
       })
       .catch(err => {
-        console.error('Error loading day details:', err);
         setDayDetails(null);
       })
       .finally(() => {

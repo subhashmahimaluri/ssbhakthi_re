@@ -137,7 +137,6 @@ export default function AdminStotrasPage({ userRoles }: AdminStotrasPageProps) {
         hasPrev: data.pagination.hasPrev,
       }));
     } catch (error) {
-      console.error('Error fetching stotras:', error);
       setError(error instanceof Error ? error.message : 'Failed to fetch stotras');
     } finally {
       setLoading(false);
@@ -180,7 +179,6 @@ export default function AdminStotrasPage({ userRoles }: AdminStotrasPageProps) {
       // Refresh the list to get updated pagination
       fetchStotras();
     } catch (error) {
-      console.error('Error deleting stotra:', error);
       setError(error instanceof Error ? error.message : 'Failed to delete stotra');
     } finally {
       setDeleting(false);

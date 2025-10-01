@@ -3,16 +3,12 @@ import { JWT } from 'next-auth/jwt';
 
 // Validate required environment variables
 if (!process.env.NEXTAUTH_SECRET) {
-  console.error('❌ NEXTAUTH_SECRET is missing from environment variables');
 }
 if (!process.env.KEYCLOAK_ISSUER) {
-  console.error('❌ KEYCLOAK_ISSUER is missing from environment variables');
 }
 if (!process.env.KEYCLOAK_CLIENT_ID) {
-  console.error('❌ KEYCLOAK_CLIENT_ID is missing from environment variables');
 }
 if (!process.env.KEYCLOAK_CLIENT_SECRET) {
-  console.error('❌ KEYCLOAK_CLIENT_SECRET is missing from environment variables');
 }
 
 // Define custom types for the session and JWT
@@ -120,9 +116,7 @@ const authOptions: NextAuthOptions = {
               refresh_token: token.refreshToken as string,
             }),
           });
-        } catch (error) {
-          console.error('Failed to logout from Keycloak:', error);
-        }
+        } catch (error) {}
       }
     },
   },

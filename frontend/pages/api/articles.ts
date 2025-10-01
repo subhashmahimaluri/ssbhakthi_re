@@ -40,8 +40,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const backendUrl = `${BACKEND_URL}/rest/articles?${params.toString()}`;
 
-    console.log('🔗 Fetching from backend:', backendUrl);
-
     const response = await fetch(backendUrl, {
       headers: {
         'Content-Type': 'application/json',
@@ -89,7 +87,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       meta: data.meta,
     });
   } catch (error) {
-    console.error('Error fetching articles:', error);
     res.status(500).json({
       error: 'Failed to fetch articles',
       details: error instanceof Error ? error.message : 'Unknown error',

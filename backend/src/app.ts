@@ -32,9 +32,7 @@ class App {
   private async initializeDatabase(): Promise<void> {
     try {
       await connectDB();
-    } catch (error) {
-      console.error('Failed to connect to database:', error);
-    }
+    } catch (error) {}
   }
 
   private initializeMiddlewares(): void {
@@ -57,7 +55,6 @@ class App {
 
     // Request logging
     this.app.use((req, _res, next) => {
-      console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
       next();
     });
   }
@@ -106,11 +103,7 @@ class App {
 
       // Mount GraphQL endpoint
       this.app.use('/graphql', createGraphQLMiddleware());
-
-      console.log('🚀 GraphQL server initialized at /graphql');
-    } catch (error) {
-      console.error('Failed to initialize GraphQL server:', error);
-    }
+    } catch (error) {}
   }
 
   private initializeErrorHandling(): void {

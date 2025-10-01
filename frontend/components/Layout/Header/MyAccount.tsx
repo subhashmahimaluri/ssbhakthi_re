@@ -18,7 +18,6 @@ export default function MyAccount() {
         redirect: true,
       });
     } catch (error) {
-      console.error('Sign out error:', error);
       // Fallback: redirect manually if signOut fails
       window.location.href = '/';
     }

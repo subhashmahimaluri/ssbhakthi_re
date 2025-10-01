@@ -71,7 +71,6 @@ export default function ArticlesPage({ userRoles }: ArticlesPageProps) {
       const data = await response.json();
       setArticles(data.articles || []);
     } catch (err) {
-      console.error('Error fetching articles:', err);
       setError(err instanceof Error ? err.message : 'Failed to load articles');
     } finally {
       setLoading(false);
@@ -114,12 +113,7 @@ export default function ArticlesPage({ userRoles }: ArticlesPageProps) {
       setArticles(prev => prev.filter(article => article.slug !== slug));
 
       // Show success message (you could use a toast library here)
-      alert('Article deleted successfully!');
     } catch (error) {
-      console.error('Error deleting article:', error);
-      alert(
-        `Failed to delete article: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
     } finally {
       setDeleting(null);
     }

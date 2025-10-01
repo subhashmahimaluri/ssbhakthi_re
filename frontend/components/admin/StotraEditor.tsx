@@ -70,43 +70,20 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
   const loadCategories = async () => {
     try {
       setLoadingCategories(true);
-      console.log('📂 Loading categories from /api/categories...');
+
       const response = await fetch('/api/categories');
-      console.log('📂 Categories API response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
-        console.log('📂 Categories API response data:', data);
-        console.log('📂 Categories array:', data.categories);
-        console.log('📂 Categories count:', data.categories?.length || 0);
-
-        // Log taxonomy distribution
-        if (data.categories) {
-          const typeCount = data.categories.filter(
-            (cat: any) => cat.meta?.taxonomy === 'type'
-          ).length;
-          const devaCount = data.categories.filter(
-            (cat: any) => cat.meta?.taxonomy === 'deva'
-          ).length;
-          const byNumberCount = data.categories.filter(
-            (cat: any) => cat.meta?.taxonomy === 'by-number'
-          ).length;
-          console.log('📂 Taxonomy distribution:', { typeCount, devaCount, byNumberCount });
-        }
 
         setCategories(data.categories || []);
       } else {
-        console.warn('⚠️ Failed to load categories:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.warn('⚠️ Categories API error:', errorText);
         setCategories([]);
       }
     } catch (error) {
-      console.error('❌ Error loading categories:', error);
       setCategories([]);
     } finally {
       setLoadingCategories(false);
-      console.log('📂 Categories loading completed');
     }
   };
 
@@ -148,12 +125,6 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
         tagIds: [],
       };
 
-      console.log('Loading existing categories:', {
-        typeIds: stotra.categories?.typeIds,
-        devaIds: stotra.categories?.devaIds,
-        byNumberIds: stotra.categories?.byNumberIds,
-      });
-
       // Set the current locale data
       newFormData.title[currentLocale as keyof typeof newFormData.title] = stotra.title || '';
       newFormData.stotra[currentLocale as keyof typeof newFormData.stotra] = stotra.stotra || '';
@@ -162,11 +133,7 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
       newFormData.videoId[currentLocale as keyof typeof newFormData.videoId] = stotra.videoId || '';
 
       setFormData(newFormData);
-
-      console.log('Loaded stotra data:', stotra);
-      console.log('Set form data:', newFormData);
     } catch (error) {
-      console.error('Error loading stotra:', error);
       setErrors(['Failed to load stotra data']);
     } finally {
       setLoading(false);
@@ -342,13 +309,10 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
       }
 
       const result = await response.json();
-      console.log('Stotra saved successfully:', result);
 
       // Redirect to stotras list
       router.push('/admin/stotras');
     } catch (error) {
-      console.error('Save error:', error);
-
       let errorMessage = `Failed to save stotra: ${error instanceof Error ? error.message : 'Unknown error'}`;
 
       setErrors([errorMessage]);
@@ -686,7 +650,7 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
                         value={formData.categoryId}
                         onChange={e => {
                           const value = e.target.value;
-                          console.log('Type category selected:', value);
+
                           setFormData(prev => ({ ...prev, categoryId: value }));
                         }}
                         required
@@ -726,7 +690,7 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
                             e.target.selectedOptions,
                             option => option.value
                           );
-                          console.log('Deva categories selected:', values);
+
                           setFormData(prev => ({ ...prev, devaIds: values }));
                         }}
                         style={{ minHeight: '120px' }}
@@ -761,7 +725,7 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
                             e.target.selectedOptions,
                             option => option.value
                           );
-                          console.log('ByNumber categories selected:', values);
+
                           setFormData(prev => ({ ...prev, byNumberIds: values }));
                         }}
                         style={{ minHeight: '120px' }}

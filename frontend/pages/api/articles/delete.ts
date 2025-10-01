@@ -33,8 +33,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Call backend API to delete article
     const backendUrl = `${BACKEND_URL}/rest/articles/${encodeURIComponent(slug)}`;
 
-    console.log('🗑️ Deleting article at:', backendUrl);
-
     const response = await fetch(backendUrl, {
       method: 'DELETE',
       headers: {
@@ -58,7 +56,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: data.message || 'Article deleted successfully',
     });
   } catch (error) {
-    console.error('Error deleting article:', error);
     res.status(500).json({
       error: 'Failed to delete article',
       details: error instanceof Error ? error.message : 'Unknown error',

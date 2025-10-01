@@ -42,8 +42,6 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
   try {
     // Development bypass for testing
     if (process.env['NODE_ENV'] === 'development' && process.env['BYPASS_AUTH'] === 'true') {
-      console.log('⚠️  Auth bypassed for development');
-
       const authHeader = req.headers.authorization;
 
       // If we have a real JWT token, try to extract user data from it
@@ -98,9 +96,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
               next();
               return;
             }
-          } catch (decodeError) {
-            console.log('⚠️  Could not decode JWT token, using fallback');
-          }
+          } catch (decodeError) {}
         }
       }
 

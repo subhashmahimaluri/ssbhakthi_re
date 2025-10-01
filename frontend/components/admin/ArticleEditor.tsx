@@ -97,11 +97,7 @@ export default function ArticleEditor({ articleId }: ArticleEditorProps) {
       newFormData.body[currentLocale as keyof typeof newFormData.body] = article.body || '';
 
       setFormData(newFormData);
-
-      console.log('Loaded article data:', article);
-      console.log('Set form data:', newFormData);
     } catch (error) {
-      console.error('Error loading article:', error);
       setErrors(['Failed to load article data']);
     } finally {
       setLoading(false);
@@ -199,9 +195,6 @@ export default function ArticleEditor({ articleId }: ArticleEditorProps) {
         tagIds: formData.tagIds,
       };
 
-      console.log('Submitting article data:', articleData);
-      console.log('Article ID:', articleId);
-
       let response;
 
       if (articleId) {
@@ -236,13 +229,10 @@ export default function ArticleEditor({ articleId }: ArticleEditorProps) {
       }
 
       const result = await response.json();
-      console.log('Article saved successfully:', result);
 
       // Redirect to articles list
       router.push('/admin/articles');
     } catch (error) {
-      console.error('Save error:', error);
-
       let errorMessage = `Failed to save article: ${error instanceof Error ? error.message : 'Unknown error'}`;
 
       setErrors([errorMessage]);

@@ -10,7 +10,6 @@ async function getEffectiveSession(req: NextApiRequest, res: NextApiResponse) {
 
   // Development bypass - if no session in development, create a mock one
   if (!session && process.env.NODE_ENV === 'development') {
-    console.log('⚠️  Development mode: Creating mock session for testing');
     return {
       user: {
         id: 'dev-user',
@@ -81,9 +80,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     };
 
-    console.log('🔗 Creating article in backend:', BACKEND_URL);
-    console.log('📄 Article data:', JSON.stringify(backendData, null, 2));
-
     const response = await fetch(`${BACKEND_URL}/rest/articles`, {
       method: 'POST',
       headers: {
@@ -97,7 +93,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Backend error:', errorText);
+
       throw new Error(`Backend responded with ${response.status}: ${errorText}`);
     }
 
@@ -109,7 +105,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: 'Article created successfully',
     });
   } catch (error) {
-    console.error('Error creating article:', error);
     res.status(500).json({
       error: 'Failed to create article',
       details: error instanceof Error ? error.message : 'Unknown error',

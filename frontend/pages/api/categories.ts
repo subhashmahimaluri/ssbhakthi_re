@@ -9,8 +9,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  console.log('🔎 [Categories API] Starting request...');
-
   try {
     // Check authentication for admin access (with development bypass)
     const session = await getServerSession(req, res, authOptions);
@@ -18,7 +16,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Development environment bypass
     let effectiveSession = session;
     if (!session && process.env.NODE_ENV === 'development') {
-      console.log('🔧 Development mode: bypassing authentication for categories API');
       effectiveSession = {
         user: {
           id: 'dev-user',
@@ -62,9 +59,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     `;
 
-    console.log('🔎 [Categories API] Making GraphQL request to:', `${BACKEND_URL}/graphql`);
-    console.log('🔎 [Categories API] GraphQL query:', query.trim());
-
     const response = await fetch(`${BACKEND_URL}/graphql`, {
       method: 'POST',
       headers: {
@@ -77,27 +71,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       body: JSON.stringify({ query }),
     });
 
-    console.log('🔎 [Categories API] GraphQL response status:', response.status);
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('😱 [Categories API] GraphQL error response:', errorText);
+
       throw new Error(`GraphQL responded with ${response.status}: ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('🔎 [Categories API] GraphQL response data:', JSON.stringify(data, null, 2));
 
     // Handle Apollo Server's nested response format
     const actualData = data.body?.singleResult || data;
 
     if (actualData.errors) {
-      console.error('😱 [Categories API] GraphQL errors:', actualData.errors);
       throw new Error(actualData.errors[0]?.message || 'GraphQL error');
     }
 
     const categories = actualData.data?.categories?.items || [];
-    console.log(`🔎 [Categories API] Retrieved ${categories.length} categories from GraphQL`);
 
     // Parse meta field if it's a string
     const parsedCategories = categories.map((cat: any) => {
@@ -106,7 +95,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         try {
           parsedMeta = JSON.parse(cat.meta);
         } catch (e) {
-          console.warn('Failed to parse meta for category:', cat.id);
           parsedMeta = { taxonomy: 'unknown' };
         }
       }
@@ -125,8 +113,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       total: parsedCategories.length,
     });
   } catch (error) {
-    console.error('😱 [Categories API] Error:', error);
-    console.error('😱 [Categories API] Error stack:', (error as Error)?.stack);
     res.status(500).json({
       error: 'Failed to fetch categories',
       details: error instanceof Error ? error.message : 'Unknown error',

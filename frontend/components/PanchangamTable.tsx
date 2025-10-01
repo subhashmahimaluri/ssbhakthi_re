@@ -231,9 +231,7 @@ export default function PanchangamTable({ date, showViewMore = false }: Panchang
             angas.push(angaEntry);
           }
         }
-      } catch (err) {
-        console.error(`Error calculating ${angaType} for`, checkDate, err);
-      }
+      } catch (err) {}
     }
 
     // Sort by start time
@@ -291,7 +289,6 @@ export default function PanchangamTable({ date, showViewMore = false }: Panchang
       const dayKaranas = getDayAngas(allKaranas, sunriseTime, 'karana');
       setDisplayKaranas(dayKaranas);
     } catch (err) {
-      console.error('Error calculating Panchangam:', err);
       setPanchangamData({});
       setSunTime({});
       setMoonTime({});
@@ -682,7 +679,6 @@ export default function PanchangamTable({ date, showViewMore = false }: Panchang
                         </>
                       );
                     } catch (error) {
-                      console.error('Error calculating Rahu Kalam:', error);
                       return (
                         <>
                           <li>
@@ -715,7 +711,6 @@ export default function PanchangamTable({ date, showViewMore = false }: Panchang
                             formatTimeIST(sunTime.sunSet)
                           );
                         } catch (error) {
-                          console.error('Error calculating Abhijit Muhurth:', error);
                           return 'N/A';
                         }
                       })()}
@@ -726,7 +721,6 @@ export default function PanchangamTable({ date, showViewMore = false }: Panchang
                         try {
                           return brahmaMuhurtham(formatTimeIST(sunTime.sunRise));
                         } catch (error) {
-                          console.error('Error calculating Brahma Muhurth:', error);
                           return 'N/A';
                         }
                       })()}
@@ -740,7 +734,6 @@ export default function PanchangamTable({ date, showViewMore = false }: Panchang
                             formatTimeIST(addDays(sunTime.sunRise || new Date(), 1))
                           );
                         } catch (error) {
-                          console.error('Error calculating Pradosha Time:', error);
                           return 'N/A';
                         }
                       })()}

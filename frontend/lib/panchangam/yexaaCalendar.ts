@@ -280,10 +280,7 @@ export class YexaaCalendar {
     // Fallback: if not found, estimate based on previous patterns
     // Typically occurs in late March or early April
     const fallbackDate = new Date(year, 2, 30); // March 30th as fallback
-    console.warn(
-      `Could not find Chaitra Shukla Padyami for ${year}, using fallback:`,
-      fallbackDate.toDateString()
-    );
+
     return fallbackDate;
   }
 

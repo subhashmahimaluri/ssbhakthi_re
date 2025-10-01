@@ -26,13 +26,13 @@ function createApolloClient(accessToken?: string) {
 
   const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
     if (graphQLErrors) {
-      graphQLErrors.forEach(({ message, locations, path }) =>
-        console.log(`[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`)
-      );
+      graphQLErrors.forEach(({ message, locations, path }) => {
+        // GraphQL error occurred
+      });
     }
 
     if (networkError) {
-      console.log(`[Network error]: ${networkError}`);
+      // Network error occurred
 
       // Handle 401 errors by redirecting to sign-in
       if ('statusCode' in networkError && networkError.statusCode === 401) {

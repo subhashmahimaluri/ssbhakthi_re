@@ -71,7 +71,6 @@ const VrathTile: React.FC<VrathTileProps> = ({ vrath, onClick }) => {
     } else {
       // Future: Navigate to vrath detail page
       // router.push(`/calendar/vrathas/${vrath.id}`);
-      console.log(`Clicked on vrath: ${vrath.nameEnglish}`);
     }
   };
 

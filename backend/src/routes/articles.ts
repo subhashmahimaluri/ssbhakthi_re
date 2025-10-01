@@ -13,7 +13,7 @@ function getLanguageCode(lang: string): LanguageCode {
 // GET /rest/articles - List all articles
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    console.log('📋 Articles API called with query:', req.query);
+
 
     const { lang = 'en', limit = '50', offset = '0', status } = req.query;
 
@@ -21,7 +21,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const limitNum = Math.min(parseInt(limit as string) || 50, 100); // Max 100
     const offsetNum = Math.max(parseInt(offset as string) || 0, 0);
 
-    console.log('🔍 Query parameters:', { languageCode, limitNum, offsetNum, status });
+
 
     // Build query
     const query: any = {

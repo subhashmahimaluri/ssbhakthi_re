@@ -79,9 +79,6 @@ export class YexaaPanchang {
     const normalizedTithi = this.normalizeName(tithiName);
 
     if (debug) {
-      console.log('=== Debug Tithi Lookup ===');
-      console.log('Input:', { year, masa, paksha, tithiName });
-      console.log('Normalized:', { normalizedMasa, normalizedPaksha, normalizedTithi });
     }
 
     // Get search date range based on masa
@@ -93,9 +90,7 @@ export class YexaaPanchang {
         startDate: new Date(year, 0, 1), // Jan 1
         endDate: new Date(year, 11, 31), // Dec 31
       };
-      if (debug) console.log('Masa not recognized, searching entire year');
     } else {
-      if (debug) console.log('Search range:', searchRange);
     }
 
     // Search day by day
@@ -112,10 +107,6 @@ export class YexaaPanchang {
 
         // For debugging, log first few days and any matches
         if (debug && (daysChecked <= 5 || daysChecked % 30 === 0)) {
-          console.log(`Day ${daysChecked} (${currentDate.toDateString()}):`);
-          console.log('  Calculated Masa:', calendar.MoonMasa?.name_en_IN || 'N/A');
-          console.log('  Calculated Paksha:', calculated.Paksha?.name_en_IN || 'N/A');
-          console.log('  Calculated Tithi:', calculated.Tithi?.name_en_IN || 'N/A');
         }
 
         // Check if all conditions match
@@ -131,7 +122,6 @@ export class YexaaPanchang {
         ) {
           matchingDays++;
           if (debug) {
-            console.log(`✅ MATCH FOUND on ${currentDate.toDateString()}`);
           }
           // Create a new date in IST timezone (UTC+5:30)
           const istDate = new Date(currentDate.getTime());
@@ -139,7 +129,6 @@ export class YexaaPanchang {
         }
       } catch (error) {
         if (debug) {
-          console.error(`Error calculating panchangam for ${currentDate.toISOString()}:`, error);
         }
       }
 
@@ -253,9 +242,6 @@ export class YexaaPanchang {
       // If no masa is available, we might be in a transition period
       // For debugging purposes, let's see what happens if we allow it
       if (debug) {
-        console.log(
-          '    WARNING: No masa data available - this might be Chaitra transition period'
-        );
       }
       // For March 30, 2025 case, let's temporarily allow matching when masa is empty
       // This is likely a transition between lunar months
@@ -276,20 +262,6 @@ export class YexaaPanchang {
     const tithiMatches = normalizedCalculatedTithi === normalizedTithi;
 
     if (debug) {
-      console.log('  Matching details:');
-      console.log(
-        `    Available masas: [${availableMasas.join(', ')}] (MoonMasa: "${moonMasa}", SolarMasa: "${solarMasa}")`
-      );
-      console.log(
-        `    Masa match: "${actualMasaUsed}" matches target "${normalizedMasa}" ? ${masaMatches}`
-      );
-      console.log(
-        `    Paksha: "${normalizedCalculatedPaksha}" === "${normalizedPaksha}" ? ${pakshaMatches}`
-      );
-      console.log(
-        `    Tithi: "${normalizedCalculatedTithi}" === "${normalizedTithi}" ? ${tithiMatches}`
-      );
-      console.log(`    Overall match: ${masaMatches && pakshaMatches && tithiMatches}`);
     }
 
     return masaMatches && pakshaMatches && tithiMatches;
@@ -334,10 +306,6 @@ export class YexaaPanchang {
     // Search entire year day by day
     const currentDate = new Date(year, 0, 1);
     const endDate = new Date(year, 11, 31);
-
-    console.log(
-      `Searching for: masa=${normalizedMasa}, paksha=${normalizedPaksha}, tithi=${normalizedTithi}`
-    );
 
     while (currentDate <= endDate) {
       try {

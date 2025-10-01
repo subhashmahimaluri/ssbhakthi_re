@@ -196,9 +196,7 @@ const CommentItem = ({
           try {
             const errorData = await response.json();
             errorMessage = errorData.error?.message || errorMessage;
-          } catch (parseError) {
-            console.error('Failed to parse error response:', parseError);
-          }
+          } catch (parseError) {}
         }
 
         throw new Error(errorMessage);
@@ -209,7 +207,6 @@ const CommentItem = ({
       onCommentUpdated(); // Refresh comments list
     } catch (error) {
       clearTimeout(timeoutId); // Clear timeout on error
-      console.error('Error updating comment:', error);
 
       if (error instanceof Error && error.name === 'AbortError') {
         setUpdateError('Request timed out. Please check your connection and try again.');
@@ -445,9 +442,7 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
           try {
             const errorData = await response.json();
             errorMessage = errorData.error?.message || errorMessage;
-          } catch (parseError) {
-            console.error('Failed to parse error response:', parseError);
-          }
+          } catch (parseError) {}
         }
 
         throw new Error(errorMessage);
@@ -458,7 +453,6 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
       setTotalComments(data.total);
     } catch (error) {
       clearTimeout(timeoutId); // Clear timeout on error
-      console.error('Error fetching comments:', error);
 
       let errorMessage = 'Failed to load comments';
       if (error instanceof Error && error.name === 'AbortError') {
@@ -484,7 +478,7 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
       if (session.user.email) {
         // Generate same ID format as backend: user-{email with @ and . replaced by -}
         const userId = `user-${session.user.email.replace(/[@.]/g, '-')}`;
-        console.log('🆔 Frontend generated user ID:', userId, 'for email:', session.user.email);
+
         return userId;
       }
       return 'dev-user-123';
@@ -555,9 +549,7 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
           try {
             const errorData = await response.json();
             errorMessage = errorData.error?.message || errorMessage;
-          } catch (parseError) {
-            console.error('Failed to parse error response:', parseError);
-          }
+          } catch (parseError) {}
         }
 
         throw new Error(errorMessage);
@@ -566,7 +558,6 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
       handleCommentDeleted();
     } catch (error) {
       clearTimeout(timeoutId); // Clear timeout on error
-      console.error('Error deleting comment:', error);
 
       let errorMessage = 'Failed to delete comment';
       if (error instanceof Error && error.name === 'AbortError') {
@@ -613,11 +604,6 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
         text: commentText.trim(),
       };
 
-      console.log('Submitting comment with payload:', requestBody);
-      console.log('Session access token exists:', !!session.accessToken);
-      console.log('Content type:', contentType);
-      console.log('Canonical slug:', canonicalSlug);
-
       // Check for valid session token
       if (!session.accessToken) {
         throw new Error('Authentication required. Please sign in again.');
@@ -656,9 +642,6 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
             errorMessage = errorData.error?.message || errorData.message || errorMessage;
           }
         } catch (parseError) {
-          console.error('Failed to parse error response:', parseError);
-          console.error('Raw response status:', response.status, response.statusText);
-
           // Provide user-friendly error based on status code
           if (response.status === 401) {
             errorMessage = 'Authentication expired. Please sign in again.';
@@ -674,7 +657,6 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
       }
 
       const result = await response.json();
-      console.log('Comment submitted successfully:', result);
 
       // Show success feedback with animation
       setSubmissionSuccess(true);
@@ -709,7 +691,6 @@ export default function CommentSection({ contentType, canonicalSlug }: CommentSe
       }, 4000);
     } catch (error) {
       clearTimeout(timeoutId); // Clear timeout on error
-      console.error('Error submitting comment:', error);
 
       // Handle AbortError specifically
       if (error instanceof Error && error.name === 'AbortError') {

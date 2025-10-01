@@ -15,7 +15,6 @@ const typeDefs = readFileSync(join(__dirname, 'schema.graphql'), 'utf8');
 // Custom error formatter
 const formatError = (formattedError: GraphQLFormattedError): GraphQLFormattedError => {
   if (isDevelopment()) {
-    console.error('GraphQL Error:', formattedError);
   }
 
   if (!isDevelopment() && formattedError.message.includes('Internal server error')) {
@@ -76,7 +75,6 @@ export const createGraphQLMiddleware = () => {
 
       res.status(405).json({ error: 'Method not allowed' });
     } catch (error) {
-      console.error('GraphQL middleware error:', error);
       res.status(500).json({
         error: {
           message: 'Internal server error',

@@ -19,7 +19,6 @@ async function getEffectiveSession(req: NextApiRequest, res: NextApiResponse) {
 
   // Development bypass - if no session in development, create a mock one
   if (!session && process.env.NODE_ENV === 'development') {
-    console.log('⚠️  Development mode: Creating mock session for testing');
     return {
       user: {
         id: 'dev-user',
@@ -56,8 +55,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { locale = 'te' } = req.query;
 
       const backendUrl = `${BACKEND_URL}/rest/articles/${slug}?lang=${locale}`;
-
-      console.log('🔗 Fetching article from backend:', backendUrl);
 
       const response = await fetch(backendUrl, {
         headers: {
@@ -101,7 +98,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       res.json(transformedArticle);
     } catch (error) {
-      console.error('Error fetching article:', error);
       res.status(500).json({
         error: 'Failed to fetch article',
         details: error instanceof Error ? error.message : 'Unknown error',
@@ -156,9 +152,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       };
 
-      console.log('🔗 Updating article in backend:', `${BACKEND_URL}/rest/articles/${slug}`);
-      console.log('📄 Article data:', JSON.stringify(backendData, null, 2));
-
       const response = await fetch(`${BACKEND_URL}/rest/articles/${slug}`, {
         method: 'PUT',
         headers: {
@@ -172,7 +165,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Backend error:', errorText);
+
         throw new Error(`Backend responded with ${response.status}: ${errorText}`);
       }
 
@@ -184,7 +177,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message: 'Article updated successfully',
       });
     } catch (error) {
-      console.error('Error updating article:', error);
       res.status(500).json({
         error: 'Failed to update article',
         details: error instanceof Error ? error.message : 'Unknown error',

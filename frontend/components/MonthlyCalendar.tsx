@@ -70,7 +70,6 @@ export default function MonthlyCalendar({ initialDate }: MonthlyCalendarProps) {
           nakshatra: calculated.Nakshatra?.name_en_IN || '',
         };
       } catch (error) {
-        console.error('Error calculating panchang for', date, error);
         return {
           sunrise: '--:--',
           sunset: '--:--',
@@ -137,7 +136,6 @@ export default function MonthlyCalendar({ initialDate }: MonthlyCalendarProps) {
           moonTime: moon,
         };
       } catch (error) {
-        console.error('Error calculating detailed panchang for', date, error);
         return null;
       }
     },
@@ -175,7 +173,6 @@ export default function MonthlyCalendar({ initialDate }: MonthlyCalendarProps) {
           setCalendarDays(monthDays);
         }
       } catch (error) {
-        console.error('Error loading calendar data:', error);
         if (!isCancelled) {
           setCalendarDays([]);
         }
@@ -201,7 +198,6 @@ export default function MonthlyCalendar({ initialDate }: MonthlyCalendarProps) {
         setDayDetails(details);
       })
       .catch(error => {
-        console.error('Error loading day details:', error);
         setDayDetails(null);
       })
       .finally(() => {

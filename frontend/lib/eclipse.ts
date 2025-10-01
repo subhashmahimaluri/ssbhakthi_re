@@ -55,9 +55,7 @@ export class YexaaEclipse {
         });
         date = new Date(e.peak.date.getTime() + 24 * 60 * 60 * 1000); // move forward 1 day
       }
-    } catch (error) {
-      console.error('Error calculating eclipses for year:', year, error);
-    }
+    } catch (error) {}
 
     return eclipses.sort((a, b) => a.date.getTime() - b.date.getTime());
   }
@@ -86,7 +84,6 @@ export class YexaaEclipse {
             peak: lunar.peak.date,
           };
     } catch (error) {
-      console.error('Error finding next eclipse after:', after, error);
       return null;
     }
   }
