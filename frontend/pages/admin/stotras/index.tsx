@@ -108,14 +108,20 @@ export default function AdminStotrasPage({ userRoles }: AdminStotrasPageProps) {
         offset: ((pagination.page - 1) * pagination.limit).toString(),
       });
 
-      if (filters.status !== 'all') {
+      // Only add status filter if a specific status is selected (not 'all')
+      if (filters.status && filters.status !== 'all') {
         params.set('status', filters.status);
       }
+      // For admin pages, we want to show all statuses by default
       if (filters.search) {
         params.set('search', filters.search);
       }
 
-      const response = await fetch(`/api/stotras?${params.toString()}`);
+      const response = await fetch(`/api/stotras?${params.toString()}`, {
+        headers: {
+          'x-admin-access': 'true', // Mark this as an admin request
+        },
+      });
 
       if (!response.ok) {
         throw new Error(`Failed to fetch stotras: ${response.status}`);

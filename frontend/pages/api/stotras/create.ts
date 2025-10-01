@@ -8,6 +8,7 @@ interface StotraData {
   canonicalSlug?: string;
   stotra: string;
   stotraMeaning?: string;
+  videoId?: string;
   status: 'draft' | 'published' | 'scheduled';
   locale: string;
   scheduledAt?: string;
@@ -61,6 +62,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const stotraData: StotraData = req.body;
 
+    console.log('📹 Debug: Received stotra data:', {
+      title: stotraData.title,
+      videoId: stotraData.videoId,
+      locale: stotraData.locale,
+      videoIdType: typeof stotraData.videoId,
+    });
+
     // Validate required fields
     if (!stotraData.title || !stotraData.stotra || !stotraData.locale) {
       return res.status(400).json({
@@ -101,7 +109,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         [stotraData.locale]: {
           title: stotraData.title,
           seoTitle: stotraData.seoTitle || null,
-          videoId: null,
+          videoId: stotraData.videoId || null,
           stotra: stotraData.stotra,
           stotraMeaning: stotraData.stotraMeaning || null,
           body: null, // Stotras don't use body field

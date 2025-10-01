@@ -48,7 +48,8 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
     seoDescription: '',
     seoKeywords: '',
     featuredImage: '',
-    categoryIds: [] as string[],
+    categoryId: '' as string, // Single required type category
+    categoryIds: [] as string[], // Keep for compatibility with other categories
     devaIds: [] as string[],
     byNumberIds: [] as string[],
     tagIds: [] as string[],
@@ -140,7 +141,8 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
         seoDescription: stotra.seoDescription || '',
         seoKeywords: stotra.seoKeywords || '',
         featuredImage: stotra.featuredImage || '',
-        categoryIds: stotra.categories?.typeIds || [],
+        categoryId: stotra.categories?.typeIds?.[0] || '', // Take first type category as single selection
+        categoryIds: stotra.categories?.typeIds || [], // Keep for compatibility
         devaIds: stotra.categories?.devaIds || [],
         byNumberIds: stotra.categories?.byNumberIds || [],
         tagIds: [],
@@ -260,6 +262,10 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
       newErrors.push('Stotra content is required');
     }
 
+    if (!formData.categoryId) {
+      newErrors.push('Type category is required');
+    }
+
     setErrors(newErrors);
     return newErrors.length === 0;
   };
@@ -290,25 +296,11 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
         seoDescription: formData.seoDescription || undefined,
         seoKeywords: formData.seoKeywords || undefined,
         featuredImage: formData.featuredImage || undefined,
-        categoryIds: formData.categoryIds,
+        categoryIds: formData.categoryId ? [formData.categoryId] : [], // Convert single categoryId to array for API
         devaIds: formData.devaIds,
         byNumberIds: formData.byNumberIds,
         tagIds: formData.tagIds,
       };
-
-      console.log('🔍 Form Data Details:');
-      console.log('  - Title:', stotraData.title);
-      console.log('  - Stotra Title:', stotraData.stotraTitle);
-      console.log('  - Canonical Slug:', stotraData.canonicalSlug);
-      console.log('  - Status:', stotraData.status);
-      console.log('  - Locale:', stotraData.locale);
-      console.log('  - Category IDs:', stotraData.categoryIds);
-      console.log('  - Deva IDs:', stotraData.devaIds);
-      console.log('  - ByNumber IDs:', stotraData.byNumberIds);
-      console.log('  - Stotra Content Length:', stotraData.stotra?.length || 0);
-      console.log('  - Stotra Meaning Length:', stotraData.stotraMeaning?.length || 0);
-      console.log('Submitting stotra data:', stotraData);
-      console.log('Stotra ID:', stotraId);
 
       let response;
 
@@ -633,20 +625,21 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
                           ByNumber categories:{' '}
                           {categories.filter(cat => cat.meta?.taxonomy === 'by-number').length}
                           <br />
-                          Selected typeIds: [{formData.categoryIds.join(', ')}]<br />
+                          Selected typeId: {formData.categoryId || 'None'}
+                          <br />
                           Selected devaIds: [{formData.devaIds.join(', ')}]<br />
                           Selected byNumberIds: [{formData.byNumberIds.join(', ')}]<br />
                           <strong>Category ID Mapping:</strong>
                           <br />
-                          {formData.categoryIds.length > 0 && (
+                          {formData.categoryId && (
                             <div>
-                              <strong>Type IDs:</strong>{' '}
-                              {formData.categoryIds
-                                .map(id => {
-                                  const cat = categories.find(c => c.id === id);
-                                  return cat ? `${id}:${cat.name?.en}` : `${id}:NOT_FOUND`;
-                                })
-                                .join(', ')}
+                              <strong>Type ID:</strong>{' '}
+                              {(() => {
+                                const cat = categories.find(c => c.id === formData.categoryId);
+                                return cat
+                                  ? `${formData.categoryId}:${cat.name?.en}`
+                                  : `${formData.categoryId}:NOT_FOUND`;
+                              })()}
                               <br />
                             </div>
                           )}
@@ -688,37 +681,38 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
                     )}
 
                     <Form.Group className="mb-3">
-                      <Form.Label>Type Categories</Form.Label>
+                      <Form.Label>Type Categories *</Form.Label>
                       <Form.Select
-                        multiple
-                        value={formData.categoryIds}
+                        value={formData.categoryId}
                         onChange={e => {
-                          const values = Array.from(
-                            e.target.selectedOptions,
-                            option => option.value
-                          );
-                          console.log('Type categories selected:', values);
-                          setFormData(prev => ({ ...prev, categoryIds: values }));
+                          const value = e.target.value;
+                          console.log('Type category selected:', value);
+                          setFormData(prev => ({ ...prev, categoryId: value }));
                         }}
-                        style={{ minHeight: '120px' }}
+                        required
                       >
+                        <option value="">Select a type category...</option>
                         {categories
                           .filter(cat => cat.meta?.taxonomy === 'type')
                           .sort((a, b) => (a.name?.en || '').localeCompare(b.name?.en || ''))
                           .map(category => (
-                            <option
-                              key={category.id}
-                              value={category.id}
-                              selected={formData.categoryIds.includes(category.id)}
-                            >
+                            <option key={category.id} value={category.id}>
                               {category.name?.en || category.slug?.en || 'Untitled'}
                             </option>
                           ))}
                       </Form.Select>
                       <Form.Text className="text-muted">
-                        Hold Ctrl/Cmd to select multiple categories. Found{' '}
+                        A type category is required. Found{' '}
                         {categories.filter(cat => cat.meta?.taxonomy === 'type').length} type
-                        categories. Selected: {formData.categoryIds.length}
+                        categories.
+                        {formData.categoryId && (
+                          <span className="text-success">
+                            {' '}
+                            Selected:{' '}
+                            {categories.find(cat => cat.id === formData.categoryId)?.name?.en ||
+                              'Unknown'}
+                          </span>
+                        )}
                       </Form.Text>
                     </Form.Group>
 

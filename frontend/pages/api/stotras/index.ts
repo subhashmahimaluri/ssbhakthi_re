@@ -7,7 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Forward request to backend API
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_REST_URL || 'http://localhost:4000';
 
     // Build query string from request parameters
     const queryParams = new URLSearchParams();
@@ -32,11 +32,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       headers['Authorization'] = 'Bearer dev-token';
     }
 
-    // Check if this is an admin request (from admin pages)
-    const isAdminRequest = req.headers.referer?.includes('/admin/') || req.query.admin === 'true';
-    if (isAdminRequest) {
-      headers['x-admin-access'] = 'true';
-      console.log('🔒 Admin request detected - including all statuses');
+    // Forward admin access header from frontend
+    if (req.headers['x-admin-access']) {
+      headers['x-admin-access'] = req.headers['x-admin-access'] as string;
+      console.log('🔒 Admin access header forwarded to backend:', req.headers['x-admin-access']);
+    } else {
+      console.log('⚠️ No admin access header found in request');
     }
 
     const response = await fetch(url, {
