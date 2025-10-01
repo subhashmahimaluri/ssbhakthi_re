@@ -50,6 +50,13 @@ export default function AdminNav() {
               >
                 Add Stotra
               </Nav.Link>
+              <Nav.Link
+                as={Link}
+                href="/admin/categories"
+                className={router.pathname.startsWith('/admin/categories') ? 'active' : ''}
+              >
+                Categories
+              </Nav.Link>
             </Nav>
             <Nav>
               <Nav.Link as={Link} href="/">

@@ -101,8 +101,8 @@ class App {
       // Start Apollo Server
       await apolloServer.start();
 
-      // Mount GraphQL endpoint
-      this.app.use('/graphql', createGraphQLMiddleware());
+      // Mount GraphQL endpoint with authentication middleware
+      this.app.use('/graphql', requireAuth, createGraphQLMiddleware());
     } catch (error) {}
   }
 

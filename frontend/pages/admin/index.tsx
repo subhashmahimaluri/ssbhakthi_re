@@ -106,9 +106,16 @@ export default function AdminDashboard({ userRoles }: AdminDashboardProps) {
                   Organize your content with categories and tags.
                 </Card.Text>
                 <div className="mt-auto">
-                  <Button variant="outline-secondary" disabled>
-                    Coming Soon
-                  </Button>
+                  <Link href="/admin/categories" passHref>
+                    <Button variant="primary" className="mb-2 me-2">
+                      Manage Categories
+                    </Button>
+                  </Link>
+                  <Link href="/admin/categories/add" passHref>
+                    <Button variant="outline-primary" className="mb-2">
+                      Add Category
+                    </Button>
+                  </Link>
                 </div>
               </Card.Body>
             </Card>
