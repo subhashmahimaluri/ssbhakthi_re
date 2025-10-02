@@ -25,7 +25,7 @@ const HomePage: React.FC = () => {
       <Row className="mt-25 py-5">
         <Col lg="5" md="12" className="my-5 py-5">
           <div className="right-container shadow-1 bg-white text-black">
-            <SearchBox inputWidth={100} selectWidth={100} btnWidth={100} />
+            <SearchBox layout="vertical" />
           </div>
 
           {/* Upcoming Festivals and Vraths Section */}

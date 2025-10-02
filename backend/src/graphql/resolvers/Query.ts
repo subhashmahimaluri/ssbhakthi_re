@@ -273,33 +273,25 @@ export const Query: QueryResolvers<GraphQLContext> = {
         status: 'published',
       };
 
-      // Add text search if keyword is provided
+      // Add keyword search if provided - prioritize title search for better accuracy
       if (keyword && keyword.trim()) {
-        // For category searches, try text search first, then fallback to title search
-        if (category && category !== 'All') {
-          // Try combining text search with category filter
-          const textQuery = { ...query, $text: { $search: keyword.trim() } };
-          const textResults = await Content.find(textQuery).lean();
+        // Use title search instead of full-text search for more precise results
+        const titleSearchConditions = [
+          { 'translations.en.title': { $regex: keyword.trim(), $options: 'i' } },
+          { 'translations.te.title': { $regex: keyword.trim(), $options: 'i' } },
+          { 'translations.hi.title': { $regex: keyword.trim(), $options: 'i' } },
+          { 'translations.kn.title': { $regex: keyword.trim(), $options: 'i' } },
+          // Also search in stotraTitle for legacy content
+          { stotraTitle: { $regex: keyword.trim(), $options: 'i' } },
+          // Also search in articleTitle for articles
+          { articleTitle: { $regex: keyword.trim(), $options: 'i' } },
+        ];
 
-          if (textResults.length === 0) {
-            // Fallback to title search if text search fails
-            console.log('⚠️ Text search failed, falling back to title search');
-            const titleSearchQuery = {
-              ...query,
-              $or: [
-                ...(query.$or || []),
-                { 'translations.en.title': { $regex: keyword.trim(), $options: 'i' } },
-                { 'translations.te.title': { $regex: keyword.trim(), $options: 'i' } },
-                { 'translations.hi.title': { $regex: keyword.trim(), $options: 'i' } },
-                { 'translations.kn.title': { $regex: keyword.trim(), $options: 'i' } },
-              ],
-            };
-            query.$or = titleSearchQuery.$or;
-          } else {
-            query.$text = { $search: keyword.trim() };
-          }
+        // Combine with existing $or conditions if any
+        if (query.$or) {
+          query.$or = [...query.$or, ...titleSearchConditions];
         } else {
-          query.$text = { $search: keyword.trim() };
+          query.$or = titleSearchConditions;
         }
       }
 
@@ -336,11 +328,20 @@ export const Query: QueryResolvers<GraphQLContext> = {
             );
 
             // Search in any category field (typeIds, devaIds, byNumberIds)
-            query.$or = [
+            const categoryConditions = [
               { 'categories.typeIds': { $in: categoryObjectIds } },
               { 'categories.devaIds': { $in: categoryObjectIds } },
               { 'categories.byNumberIds': { $in: categoryObjectIds } },
             ];
+
+            // Combine category conditions with existing $or conditions
+            if (query.$or) {
+              // Create an AND condition: (title search OR ...) AND (category match)
+              query.$and = [{ $or: query.$or }, { $or: categoryConditions }];
+              delete query.$or;
+            } else {
+              query.$or = categoryConditions;
+            }
 
             console.log(
               `🏷️ Category filter applied: ${category} with ObjectIds:`,
@@ -353,7 +354,7 @@ export const Query: QueryResolvers<GraphQLContext> = {
       // Execute search with pagination
       const [results, totalCount] = await Promise.all([
         Content.find(query)
-          .sort(keyword ? { score: { $meta: 'textScore' } } : { updatedAt: -1 })
+          .sort({ updatedAt: -1 }) // Sort by update date since we're not using text search scoring
           .skip(offset)
           .limit(limit)
           .lean(),

@@ -47,9 +47,6 @@ const searchContentGraphQL = async (
       offset,
     };
 
-    console.log('📞 Making HTTP request to:', graphqlEndpoint);
-    console.log('📝 Query variables:', JSON.stringify(variables, null, 2));
-
     const response = await fetch(graphqlEndpoint, {
       method: 'POST',
       headers: {
@@ -63,7 +60,6 @@ const searchContentGraphQL = async (
     }
 
     const responseData = await response.json();
-    console.log('📊 Raw GraphQL Response:', JSON.stringify(responseData, null, 2));
 
     // Handle Apollo Server response format
     let data;

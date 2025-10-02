@@ -80,8 +80,8 @@ export const CONTENT_TYPE_ROUTES: ContentTypeMap = {
 };
 
 export const SEARCH_FILTER_OPTIONS = [
-  { value: 'All', label: 'All Stotras & Namavali' },
-  { value: 'stotras', label: 'Stotras' },
+  { value: 'All', label: 'All' },
+  { value: 'stotras', label: 'All Stotras & Namavali' },
   { value: 'sahasranamam', label: 'Sahasranamam' },
   { value: 'ashtottara_shatanamavali', label: 'Ashtottara Shatanamavali' },
   { value: 'sahasranamavali', label: 'Sahasranamavali' },

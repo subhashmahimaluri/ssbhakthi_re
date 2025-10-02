@@ -24,18 +24,14 @@ const SearchPage: NextPage<SearchPageProps> = ({
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SearchResult[]>(searchResults);
 
-  // Handle route change loading states
+  // Handle route change loading states - simplified approach
   useEffect(() => {
-    const handleStart = (url: string) => {
-      if (url !== router.asPath) {
-        setLoading(true);
-      }
+    const handleStart = () => {
+      setLoading(true);
     };
 
-    const handleComplete = (url: string) => {
-      if (url === router.asPath) {
-        setLoading(false);
-      }
+    const handleComplete = () => {
+      setLoading(false);
     };
 
     router.events.on('routeChangeStart', handleStart);
@@ -49,10 +45,12 @@ const SearchPage: NextPage<SearchPageProps> = ({
     };
   }, [router]);
 
-  // Update results when props change
+  // Update results when props change and ensure loading is cleared
   useEffect(() => {
     setResults(searchResults);
-  }, [searchResults]);
+    // Always clear loading when new data arrives
+    setLoading(false);
+  }, [searchResults, query, category]);
 
   // Generate page title and description
   const pageTitle = metaTitle || `Search Results for "${query}" - SS Bhakthi`;
@@ -140,7 +138,7 @@ const SearchPage: NextPage<SearchPageProps> = ({
               {/* Search Bar Section */}
               <div className="search-header mb-4 pt-5">
                 <div className="rounded bg-white p-4 shadow-sm">
-                  <SearchBox inputWidth={40} selectWidth={40} btnWidth={20} />
+                  <SearchBox layout="horizontal" />
                 </div>
               </div>
             </Row>

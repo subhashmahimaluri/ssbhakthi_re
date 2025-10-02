@@ -53,6 +53,11 @@ export default function Header() {
   const hideSearch = !display ? 'hide-div' : '';
   const hideNav = display ? 'hide-div' : '';
 
+  // Function to hide search bar after successful search
+  const handleSearchSubmit = () => {
+    setDisplay(false);
+  };
+
   useScrollPosition(({ prevPos, currPos }) => {
     if (currPos.y < 0) {
       setShowScrolling(true);
@@ -153,7 +158,7 @@ export default function Header() {
               </ul>
               {/* Search Bar */}
               <div className={`header-search fa-pull-left me-md-6 mx-2 my-2 ${hideSearch}`}>
-                <SearchBarHeader mobile={false} />
+                <SearchBarHeader mobile={false} onSearchSubmit={handleSearchSubmit} />
               </div>
 
               {/* Search Button */}

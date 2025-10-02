@@ -111,46 +111,71 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({ result, locale }) =
     return result.field_category || '';
   };
 
-  // Get image URL with proper YouTube thumbnail size and default image
+  // Get image URL with proper YouTube thumbnail size and default image fallback
   const getImageUrl = (): string => {
     if (result.field_image) {
       return `${process.env.NEXT_PUBLIC_API_URL}${result.field_image}`;
     }
 
-    // Use higher resolution YouTube thumbnail (maxresdefault or hq720)
+    // Use medium resolution YouTube thumbnail for better fit (480x360)
     if (result.imageUrl && result.imageUrl.includes('youtube')) {
-      // Replace any existing quality with maxresdefault for better quality
+      // Use mqdefault (320x180) for better aspect ratio and loading speed
       return result.imageUrl.replace(
-        /\/(hq720|mqdefault|sddefault|hqdefault)\.jpg/,
-        '/maxresdefault.jpg'
+        /\/(maxresdefault|hq720|hqdefault|sddefault)\.jpg/,
+        '/mqdefault.jpg'
       );
     }
 
-    return result.imageUrl || '/logo.png';
+    // Fallback to default image if no imageUrl or videoId
+    if (result.imageUrl) {
+      return result.imageUrl;
+    }
+
+    // Use default content image
+    return '/images/default-content.jpg';
   };
 
-  // Get content type label for display
-  const getContentTypeLabel = (): string => {
+  // Get category label for display based on content type and categories
+  const getCategoryLabel = (): string => {
     const contentType = result.type || result.contentType;
-    switch (contentType) {
-      case 'Stotra':
-      case 'stotra':
-        return 'Stotra';
-      case 'Sahasranama Stotram':
-      case 'sahasranamam':
-        return 'Sahasranamam';
-      case 'Ashtottara Shatanamavali':
-      case 'ashtottara_shatanamavali':
-        return 'Ashtottara';
-      case 'Sahasra Namavali':
-      case 'sahasranamavali':
-        return 'Sahasranamavali';
-      case 'Article':
-      case 'article':
-        return 'Article';
-      default:
-        return 'Content';
+
+    // For articles, always show "Article"
+    if (contentType === 'Article' || contentType === 'article') {
+      return 'Article';
     }
+
+    // For stotras, determine the specific category
+    if (result.categories && Array.isArray(result.categories)) {
+      for (const category of result.categories) {
+        const categoryName = typeof category === 'string' ? category.toLowerCase() : '';
+
+        // Check for specific stotra categories
+        if (categoryName.includes('ashtottara') || categoryName.includes('ashtothram')) {
+          return 'Ashtottara';
+        }
+        if (categoryName.includes('sahasranamavali') && !categoryName.includes('sahasranamam')) {
+          return 'Sahasranamavali';
+        }
+        if (categoryName.includes('sahasranamam') || categoryName.includes('sahasranama')) {
+          return 'Sahasranamam';
+        }
+      }
+    }
+
+    // Fallback: Check slug patterns for category identification
+    const slug = result.canonicalSlug?.toLowerCase() || '';
+    if (slug.includes('ashtottara') || slug.includes('ashtothram')) {
+      return 'Ashtottara';
+    }
+    if (slug.includes('sahasranamavali') && !slug.includes('sahasranamam')) {
+      return 'Sahasranamavali';
+    }
+    if (slug.includes('sahasranamam') || slug.includes('sahasranama-stotram')) {
+      return 'Sahasranamam';
+    }
+
+    // Default fallback for stotras
+    return 'Stotra';
   };
 
   return (
@@ -169,8 +194,11 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({ result, locale }) =
               height={45}
               className="rounded object-cover"
               style={{ objectFit: 'cover', aspectRatio: '16/9' }}
-              onError={(e: any) => {
-                e.target.src = '/logo.png';
+              onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+                const target = e.target as HTMLImageElement;
+                if (target.src !== '/images/default-content.jpg') {
+                  target.src = '/images/default-content.jpg';
+                }
               }}
             />
           </div>
@@ -180,12 +208,8 @@ const SearchResultCard: React.FC<SearchResultCardProps> = ({ result, locale }) =
         <div className="flex-grow-1 min-width-0">
           <h3 className="text-primary h6 fw-bold text-truncate mb-1">{getDisplayTitle()}</h3>
 
-          {getDescription() && (
-            <p className="text-muted small text-truncate mb-1">{getDescription()}</p>
-          )}
-
           <div className="d-flex align-items-center">
-            <span className="badge bg-light text-dark small me-2">{getContentTypeLabel()}</span>
+            <span className="badge bg-light text-dark small me-2">{getCategoryLabel()}</span>
             {result.updatedAt && (
               <small className="text-muted">
                 Updated: {new Date(result.updatedAt).toLocaleDateString()}

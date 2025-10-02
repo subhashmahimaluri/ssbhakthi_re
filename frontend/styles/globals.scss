@@ -110,6 +110,8 @@ body {
 .search-bar-input {
   padding-top: 12px;
   padding-bottom: 12px;
+  height: 39px;
+  margin-top: 13px;
 }
 
 .fa-search {
@@ -1282,5 +1284,17 @@ a {
       display: block;
       text-align: center;
     }
+  }
+}
+
+.search-submit-btn {
+  color: #fe7102;
+  top: 13px;
+  border: 1px solid #fe7102;
+  &:hover,
+  &:active {
+    background-color: #fe7102;
+    color: #fff;
+    border: 0;
   }
 }

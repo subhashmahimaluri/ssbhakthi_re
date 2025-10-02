@@ -5,15 +5,12 @@ import { useLanguageConfig } from '@/hooks/useLanguageConfig';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Locale } from '@/locales';
 import { SessionProvider } from 'next-auth/react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import MyAccount from './MyAccount';
 
 export default function TopBar() {
   const { t, locale, switchLanguage } = useTranslation();
   const { availableLanguages } = useAvailableLanguages();
   const { availableLocales } = useLanguageConfig();
-  const pathname = usePathname();
 
   // All supported languages with display names
   const allLanguages = [
@@ -33,43 +30,25 @@ export default function TopBar() {
   const languages =
     contentFilteredLanguages.length > 0 ? contentFilteredLanguages : instanceLanguages;
 
-  const iconClassName = 'text-storm gr-hover-text-white';
-  const currentLanguage = languages.find(lang => lang.code === locale);
-
   return (
     <div className="row top-bar">
       {/* Left: Language Links */}
       <div className="col-6 topbar-call text-start">
         <ul className="contact gr-text-10 gr-text-color gr-hover-text-orange mb-1 mt-1 py-1">
           {languages.map((language, index) => {
-            const isSameDomain =
-              (language.code === 'te' || language.code === 'en') &&
-              (locale === 'te' || locale === 'en');
-
             return (
               <li key={index}>
-                {isSameDomain ? (
-                  // Same domain - use Next.js Link with proper language path
-                  <Link
-                    href={pathname || '/'}
-                    locale={language.code}
-                    className={locale === language.code ? 'lang-active' : ''}
-                  >
-                    {language.name}
-                  </Link>
-                ) : (
-                  // Cross domain - use button with switchLanguage
-                  <a
-                    href="#"
-                    onClick={e => {
-                      e.preventDefault();
-                      switchLanguage(language.code);
-                    }}
-                    className={locale === language.code ? 'lang-active' : ''}
-                  >
-                    {language.name}
-                  </a>
-                )}
+                {/* Always use switchLanguage function to preserve query parameters */}
+                <a
+                  href="#"
+                  onClick={e => {
+                    e.preventDefault();
+                    switchLanguage(language.code);
+                  }}
+                  className={locale === language.code ? 'lang-active' : ''}
+                >
+                  {language.name}
+                </a>
               </li>
             );
           })}

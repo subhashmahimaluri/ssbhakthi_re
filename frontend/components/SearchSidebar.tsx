@@ -146,31 +146,6 @@ const SearchSidebar: React.FC<SearchSidebarProps> = ({ query, category, totalRes
           </Link>
         </div>
       </div>
-
-      {/* Language Switching for Search */}
-      <div className="rounded bg-white p-3 shadow-sm">
-        <h5 className="text-primary mb-3">Search in Other Languages</h5>
-        <div className="language-options">
-          <div className="small text-muted mb-2">
-            Current: <strong>{locale.toUpperCase()}</strong>
-          </div>
-          {query && (
-            <div className="d-flex flex-wrap gap-1">
-              {['te', 'en', 'hi', 'kn']
-                .filter(lang => lang !== locale)
-                .map(lang => (
-                  <Link
-                    key={lang}
-                    href={`/search?keyword=${encodeURIComponent(query)}&category=${category || 'All'}`}
-                    className="btn btn-outline-primary btn-sm"
-                  >
-                    {lang.toUpperCase()}
-                  </Link>
-                ))}
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 };
