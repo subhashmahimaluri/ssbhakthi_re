@@ -668,9 +668,36 @@ export default function PanchangamTable({ date, showViewMore = false }: Panchang
                         formatTimeIST(sunTime.sunSet),
                         format(panchangamDate, 'EEEE') as any
                       );
-                      return <></>;
+                      return (
+                        <>
+                          <li>
+                            <span className="fw-bold">{t.panchangam.rahu}</span> :{' '}
+                            {rahuKalamTimes.rahu}
+                          </li>
+                          <li>
+                            <span className="fw-bold">{t.panchangam.gulika}</span> :{' '}
+                            {rahuKalamTimes.gulika}
+                          </li>
+                          <li>
+                            <span className="fw-bold">{t.panchangam.yamaganda}</span> :{' '}
+                            {rahuKalamTimes.yamaganda}
+                          </li>
+                        </>
+                      );
                     } catch (error) {
-                      return <></>;
+                      return (
+                        <>
+                          <li>
+                            <span className="fw-bold">{t.panchangam.rahu}</span> : N/A
+                          </li>
+                          <li>
+                            <span className="fw-bold">{t.panchangam.gulika}</span> : N/A
+                          </li>
+                          <li>
+                            <span className="fw-bold">{t.panchangam.yamaganda}</span> : N/A
+                          </li>
+                        </>
+                      );
                     }
                   })()}
               </ul>
