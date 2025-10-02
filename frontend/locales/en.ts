@@ -66,7 +66,7 @@ export const en = {
     yamaganda: 'Yamaganda',
     gulika: 'Gulika',
     dur_muhurat: 'Dur Muhurat',
-    varjyam: 'Varjyam',
+
     auspicious_period: 'Auspicious Period',
     abhijit_muhurat: 'Abhijit Muhurat',
     amrit_kaal: 'Amrit Kaal',

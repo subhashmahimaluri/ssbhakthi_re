@@ -170,19 +170,3 @@ export const durMuhurtham = (sunrise: string, sunset: string, week: WeekDay): st
 
   return dur_muhurth;
 };
-
-export const varjyam = (sunrise: string, sunset: string, nk: Nakshatra): string => {
-  const timeSlots = generateTimeSlots(sunrise, sunset, 30);
-
-  let varjyam_rime: string;
-
-  switch (nk) {
-    case 'makha':
-      varjyam_rime = fetchTime(timeSlots[8], timeSlots[9]);
-      break;
-    default:
-      varjyam_rime = fetchTime(timeSlots[5], timeSlots[6]);
-  }
-
-  return varjyam_rime;
-};

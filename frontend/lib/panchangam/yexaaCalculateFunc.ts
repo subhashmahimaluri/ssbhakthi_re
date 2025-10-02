@@ -1,4 +1,3 @@
-import varjyamConfig from './varjyamConfig.json';
 import { YexaaLocalConstant } from './yexaaLocalConstant';
 import { YexaaPanchangImpl } from './yexaaPanchangImpl';
 
@@ -207,79 +206,5 @@ export class YexaaCalculateFunc {
       0, 1, 2, 1, 0, 1, 0, 0, 2, 2, 1, 1, 0, 2, 0, 2, 0, 2, 2, 1, 1, 0, 2, 2, 1, 1, 0,
     ];
     return ganaPostions[raasiIndex];
-  }
-
-  /**
-   * Calculate Varjyam timings based on Nakshatra and sunrise time
-   * @param sunriseTime - Sunrise time as Date object
-   * @param nakshatraName - Name of the nakshatra (English key)
-   * @param nakshatraEndTime - End time of nakshatra as Date object
-   * @param timezone - Timezone offset in hours
-   * @returns Varjyam timing object with start and end times
-   */
-  calculateVarjyam(
-    sunriseTime: Date,
-    nakshatraName: string,
-    nakshatraEndTime: Date,
-    timezone: number = 0
-  ): {
-    start: Date;
-    end: Date;
-    startISO: string;
-    endISO: string;
-    startFormatted: string;
-    endFormatted: string;
-  } | null {
-    try {
-      // Get varjyam configuration for the nakshatra
-      const varjyamData = (varjyamConfig as any)[nakshatraName.toLowerCase()];
-
-      if (!varjyamData) {
-        console.warn(`No Varjyam data found for nakshatra: ${nakshatraName}`);
-        return null;
-      }
-
-      const { startGhati, durationGhati } = varjyamData;
-
-      // Convert ghatikas to minutes (1 ghati = 24 minutes)
-      const startMinutes = startGhati * 24;
-      const durationMinutes = durationGhati * 24;
-
-      // Calculate varjyam start time (from sunrise)
-      const varjyamStart = new Date(sunriseTime.getTime() + startMinutes * 60 * 1000);
-
-      // Calculate varjyam end time
-      const varjyamEnd = new Date(varjyamStart.getTime() + durationMinutes * 60 * 1000);
-
-      // Ensure varjyam doesn't extend beyond nakshatra boundary
-      const actualVarjyamEnd = varjyamEnd > nakshatraEndTime ? nakshatraEndTime : varjyamEnd;
-
-      // If varjyam starts after nakshatra ends, return null
-      if (varjyamStart >= nakshatraEndTime) {
-        return null;
-      }
-
-      // Format times for display
-      const formatTime = (date: Date): string => {
-        return date.toLocaleTimeString('en-IN', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true,
-          timeZone: 'Asia/Kolkata',
-        });
-      };
-
-      return {
-        start: varjyamStart,
-        end: actualVarjyamEnd,
-        startISO: varjyamStart.toISOString(),
-        endISO: actualVarjyamEnd.toISOString(),
-        startFormatted: formatTime(varjyamStart),
-        endFormatted: formatTime(actualVarjyamEnd),
-      };
-    } catch (error) {
-      console.error('Error calculating Varjyam:', error);
-      return null;
-    }
   }
 }

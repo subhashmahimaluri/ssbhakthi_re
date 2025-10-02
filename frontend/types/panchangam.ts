@@ -14,11 +14,6 @@ export interface PanchangamData {
   ayana?: string;
   ritu?: string;
   teluguYear?: string;
-  varjyam?: {
-    start: string;
-    end: string;
-    time: string;
-  } | null;
 }
 
 export interface SunTime {

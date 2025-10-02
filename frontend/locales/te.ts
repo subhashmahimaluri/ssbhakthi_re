@@ -66,7 +66,7 @@ export const te = {
     yamaganda: 'యమగండం',
     gulika: 'గుళికా',
     dur_muhurat: 'దుర్ముహూర్తం',
-    varjyam: 'వర్జ్యం',
+
     auspicious_period: 'శుభ సమయం',
     abhijit_muhurat: 'అభిజిత్ ముహుర్తం',
     amrit_kaal: 'అమృతకాలము',

@@ -32,7 +32,7 @@ export const kn = {
     yamaganda: 'ಯಮಗಂಡ',
     gulika: 'ಗುಳಿಕ ಕಾಲ',
     dur_muhurat: 'ದುರ್ಮುಹೂರ್ತ',
-    varjyam: 'ವರ್ಜ್ಯ ಕಾಲ',
+
     auspicious_period: 'ಶುಭ ಸಮಯ',
     abhijit_muhurat: 'ಅಭಿಜಿತ್ ಮುಹೂರ್ತ',
     amrit_kaal: 'ಅಮೃತ ಕಾಲ',
