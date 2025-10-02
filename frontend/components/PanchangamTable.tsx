@@ -265,6 +265,14 @@ export default function PanchangamTable({ date, showViewMore = false }: Panchang
         ayana: calendar?.Ayana.name_en_IN || '',
         ritu: calendar?.DrikRitu.name_en_IN || '',
         teluguYear: calendar?.TeluguYear.name_en_IN || '',
+        // Add Varjyam data
+        varjyam: calendar?.Varjyam
+          ? {
+              start: calendar.Varjyam.start,
+              end: calendar.Varjyam.end,
+              time: `${calendar.Varjyam.start} – ${calendar.Varjyam.end}`,
+            }
+          : null,
       });
 
       setSunTime(sun);
@@ -640,6 +648,19 @@ export default function PanchangamTable({ date, showViewMore = false }: Panchang
           panchangamData.yoga,
           panchangamData.yogaTime
         )}
+
+        {/* Show Varjyam prominently if available */}
+        {panchangamData.varjyam && (
+          <div className="panchang-date">
+            <h4 className="gr-text-6 text-black">{t.panchangam.varjyam}</h4>
+            <ul className="list-unstyled gr-text-8 border-bottom pb-4">
+              <li>
+                <span className="fw-bold">{t.panchangam.varjyam}</span> :{' '}
+                <span className="ms-1">{panchangamData.varjyam.time}</span>
+              </li>
+            </ul>
+          </div>
+        )}
         {showViewMore && !isExpanded && (
           <div className="mt-3 text-center">
             <Button
@@ -681,6 +702,13 @@ export default function PanchangamTable({ date, showViewMore = false }: Panchang
                             <span className="fw-bold">{t.panchangam.yamaganda}</span> :{' '}
                             {rahuKalamTimes.yamaganda}
                           </li>
+                          {/* Add Varjyam display */}
+                          {panchangamData.varjyam && (
+                            <li>
+                              <span className="fw-bold">{t.panchangam.varjyam}</span> :{' '}
+                              {panchangamData.varjyam.time}
+                            </li>
+                          )}
                         </>
                       );
                     } catch (error) {
@@ -694,6 +722,10 @@ export default function PanchangamTable({ date, showViewMore = false }: Panchang
                           </li>
                           <li>
                             <span className="fw-bold">{t.panchangam.yamaganda}</span> : N/A
+                          </li>
+                          {/* Add Varjyam N/A case */}
+                          <li>
+                            <span className="fw-bold">{t.panchangam.varjyam}</span> : N/A
                           </li>
                         </>
                       );

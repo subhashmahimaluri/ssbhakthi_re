@@ -134,6 +134,41 @@ export class YexaaCalendar {
     // Calculate Telugu year based on Chaitra Shukla Padyami date for the year
     const teluguYear = this.getTeluguYearForDate(dt, lat, lng);
 
+    // Calculate Varjyam
+    let Varjyam: any = {} as {};
+    try {
+      // Get nakshatra timing for varjyam calculation
+      const nakshatraTimings = yexaaPanchangImpl.nakshatra(
+        sunRise,
+        nn_naksh,
+        dt.getTimezoneOffset() / -60
+      );
+
+      const sunriseDate = yexaaSunMoonTimer.sunTimer(dt, lat, lng, height);
+      const nakshatraEndDate = new Date(nakshatraTimings.end);
+
+      const varjyamResult = yexaaCalculateFunc.calculateVarjyam(
+        new Date(sunriseDate.sunRise),
+        Nakshatra.name_en_IN,
+        nakshatraEndDate,
+        dt.getTimezoneOffset() / -60
+      );
+
+      if (varjyamResult) {
+        Varjyam.start = varjyamResult.startFormatted;
+        Varjyam.end = varjyamResult.endFormatted;
+        Varjyam.startISO = varjyamResult.startISO;
+        Varjyam.endISO = varjyamResult.endISO;
+        Varjyam.name_en_IN = 'varjyam';
+        Varjyam.name = 'వర్జ్యం';
+      } else {
+        Varjyam = null;
+      }
+    } catch (error) {
+      console.warn('Error calculating Varjyam:', error);
+      Varjyam = null;
+    }
+
     return {
       Tithi,
       Paksha,
@@ -150,6 +185,7 @@ export class YexaaCalendar {
       Ayana: { name_en_IN: ayana },
       DrikRitu: { name_en_IN: drikRitu },
       TeluguYear: { name_en_IN: teluguYear },
+      Varjyam,
     };
   }
 
