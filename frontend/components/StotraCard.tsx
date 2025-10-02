@@ -14,8 +14,14 @@ interface StotraTranslation {
 interface Stotra {
   canonicalSlug: string;
   contentType: string;
+  stotraTitle: string; // Added missing field
   status: string;
   imageUrl?: string | null;
+  categories?: {
+    typeIds?: string[];
+    devaIds?: string[];
+    byNumberIds?: string[];
+  };
   translations: {
     en?: StotraTranslation;
     te?: StotraTranslation;
@@ -30,9 +36,15 @@ interface StotraCardProps {
   stotra: Stotra;
   locale: string;
   showCanonicalSlug?: boolean;
+  categoryContext?: 'ashtothram' | 'sahasranamavali' | 'sahasranamam' | 'default'; // Updated to include sahasranamavali and sahasranamam
 }
 
-export default function StotraCard({ stotra, locale, showCanonicalSlug = true }: StotraCardProps) {
+export default function StotraCard({
+  stotra,
+  locale,
+  showCanonicalSlug = true,
+  categoryContext = 'default',
+}: StotraCardProps) {
   // Prioritize current locale translation, then fallback to available translations
   const translation =
     stotra.translations[locale as keyof typeof stotra.translations] ||
@@ -43,10 +55,24 @@ export default function StotraCard({ stotra, locale, showCanonicalSlug = true }:
 
   if (!translation) return null;
 
+  // Determine the correct route based on category context
+  const getHref = () => {
+    if (categoryContext === 'ashtothram') {
+      return `/ashtothram/${stotra.canonicalSlug}`;
+    }
+    if (categoryContext === 'sahasranamavali') {
+      return `/sahasranamavali/${stotra.canonicalSlug}`;
+    }
+    if (categoryContext === 'sahasranamam') {
+      return `/sahasranamam/${stotra.canonicalSlug}`;
+    }
+    return `/stotras/${stotra.canonicalSlug}`;
+  };
+
   return (
     <Col sm="12" md="6" lg="6" xl="4" className="h5 mb-3">
       <Link
-        href={`/stotras/${stotra.canonicalSlug}`}
+        href={getHref()}
         className="feature-widget focus-reset d-flex flex-column min-height-px-280 rounded-4 gr-hover-shadow-1 border bg-white text-center"
       >
         <div className="mb-auto">

@@ -5,8 +5,6 @@ import { getStotrasMetaData } from '@/utils/seo';
 import { useEffect, useState } from 'react';
 import { Button, Col, Row } from 'react-bootstrap';
 
-// Hymns / Prayers category ID
-const HYMNS_PRAYERS_CATEGORY_ID = '68ac2239bfcc70ec4468aa77';
 const ITEMS_PER_PAGE = 30;
 
 // Response interface for API
@@ -16,6 +14,11 @@ interface StotrasResponse {
     contentType: string;
     status: string;
     imageUrl?: string | null;
+    categories?: Array<{
+      _id: string;
+      name: string;
+      slug: string;
+    }>;
     translations: {
       en?: any;
       te?: any;
@@ -39,7 +42,71 @@ interface StotrasResponse {
   };
 }
 
-export default function HymnsPrayers() {
+// Helper function to determine category context based on stotra categories or slug patterns
+const getCategoryContext = (
+  stotra: any
+): 'ashtothram' | 'sahasranamavali' | 'sahasranamam' | 'default' => {
+  // First try to detect based on categories if available
+  if (stotra.categories && Array.isArray(stotra.categories)) {
+    for (const category of stotra.categories) {
+      const categoryName = category.name?.toLowerCase() || '';
+      const categorySlug = category.slug?.toLowerCase() || '';
+      const categoryId = category._id || '';
+
+      // Check for Ashtottara Shatanamavali category
+      if (
+        categoryName.includes('ashtottara') ||
+        categoryName.includes('ashtothram') ||
+        categorySlug.includes('ashtottara') ||
+        categorySlug.includes('ashtothram') ||
+        categoryId === '68ac2239bfcc70ec4468aa8a'
+      ) {
+        return 'ashtothram';
+      }
+
+      // Check for Sahasranamavali category
+      if (
+        categoryName.includes('sahasranamavali') ||
+        categorySlug.includes('sahasranamavali') ||
+        categoryId === '68ac2239bfcc70ec4468aa8f'
+      ) {
+        return 'sahasranamavali';
+      }
+
+      // Check for Sahasranamam category
+      if (
+        categoryName.includes('sahasranamam') ||
+        categorySlug.includes('sahasranamam') ||
+        categoryId === '68dce4a832e525e497f29abc'
+      ) {
+        return 'sahasranamam';
+      }
+    }
+  }
+
+  // Fallback: Detect based on canonicalSlug patterns when categories is null/empty
+  const slug = stotra.canonicalSlug?.toLowerCase() || '';
+
+  // Check for Ashtottara patterns in slug
+  if (slug.includes('ashtottara') || slug.includes('ashtothram')) {
+    return 'ashtothram';
+  }
+
+  // Check for Sahasranamavali patterns in slug (but not sahasranamam)
+  if (slug.includes('sahasranamavali') && !slug.includes('sahasranamam')) {
+    return 'sahasranamavali';
+  }
+
+  // Check for Sahasranamam patterns in slug
+  if (slug.includes('sahasranamam') || slug.includes('sahasranama-stotram')) {
+    return 'sahasranamam';
+  }
+
+  // Default to 'default' for Hymns/Prayers or other categories (routes to /stotras/[slug])
+  return 'default';
+};
+
+export default function AllStotras() {
   const { t, locale } = useTranslation();
   const { title, description } = getStotrasMetaData(locale);
 
@@ -64,13 +131,12 @@ export default function HymnsPrayers() {
         setLoadingMore(true);
       }
 
-      // Filter by Hymns / Prayers category ID
-      const apiUrl = `http://localhost:4000/rest/stotras?lang=${locale}&page=${page}&limit=${ITEMS_PER_PAGE}&categoryId=${HYMNS_PRAYERS_CATEGORY_ID}`;
-      console.log('Fetching hymns/prayers from:', apiUrl);
+      const apiUrl = `http://localhost:4000/rest/stotras?lang=${locale}&page=${page}&limit=${ITEMS_PER_PAGE}`;
+      console.log('Fetching all stotras from:', apiUrl);
 
       const response = await fetch(apiUrl);
       if (!response.ok) {
-        throw new Error('Failed to fetch hymns/prayers');
+        throw new Error('Failed to fetch stotras');
       }
       const data: StotrasResponse = await response.json();
 
@@ -105,7 +171,10 @@ export default function HymnsPrayers() {
       <Row className="mt-25 py-5">
         <Col xl="8" lg="8" md="12" className="my-5 py-5">
           <div className="left-container shadow-1 panchangam-block px-md-10 bg-white px-5 py-3 text-black">
-            <h1 className="text-center">Hymns / Prayers</h1>
+            <h1 className="text-center">All Stotras & Namavali</h1>
+            <p className="text-muted text-center">
+              Complete collection of devotional prayers and sacred names
+            </p>
 
             {loading && (
               <div className="py-4 text-center">
@@ -124,15 +193,27 @@ export default function HymnsPrayers() {
             {!loading && !error && (
               <>
                 <Row className="g-4 mt-3">
-                  {stotras.map(stotra => (
-                    <StotraCard
-                      key={stotra.canonicalSlug}
-                      stotra={stotra}
-                      locale={locale}
-                      showCanonicalSlug={true}
-                      categoryContext="default"
-                    />
-                  ))}
+                  {stotras.map(stotra => {
+                    const categoryContext = getCategoryContext(stotra);
+                    // Debug log to see category detection
+                    console.log(
+                      'Stotra:',
+                      stotra.canonicalSlug,
+                      'Categories:',
+                      stotra.categories,
+                      'Context:',
+                      categoryContext
+                    );
+                    return (
+                      <StotraCard
+                        key={stotra.canonicalSlug}
+                        stotra={stotra}
+                        locale={locale}
+                        showCanonicalSlug={true}
+                        categoryContext={categoryContext}
+                      />
+                    );
+                  })}
                 </Row>
 
                 {pagination && pagination.hasNext && (
@@ -168,43 +249,52 @@ export default function HymnsPrayers() {
 
             {!loading && !error && stotras.length === 0 && (
               <div className="py-4 text-center">
-                <p className="text-muted">No hymns/prayers available at the moment.</p>
+                <p className="text-muted">No stotras available at the moment.</p>
               </div>
             )}
           </div>
         </Col>
         <Col xl="4" lg="4" md="12" className="my-5 py-5">
           <div className="right-container shadow-1 mb-3 bg-white px-3 py-3 text-black">
-            <h2>About Hymns / Prayers</h2>
+            <h2>About This Collection</h2>
             <p className="text-muted small">
-              <strong>Hymns and Prayers</strong> are sacred compositions dedicated to various
-              deities. These spiritual texts contain devotional verses that help in meditation,
-              worship, and spiritual growth.
+              This comprehensive collection includes all categories of devotional content:
+              <strong> Hymns & Prayers, Ashtottara Shatanamavali, Sahasranamavali,</strong> and
+              <strong> Sahasranamam</strong>.
             </p>
 
             {pagination && (
               <div className="mt-3">
                 <h6>Collection Stats</h6>
                 <ul className="list-unstyled small text-muted">
-                  <li>Total Items: {pagination.total}</li>
-                  <li>Items Loaded: {stotras.length}</li>
-                  <li>Current Page: {currentPage}</li>
+                  <li>
+                    <strong>Total Items:</strong> {pagination.total}
+                  </li>
+                  <li>
+                    <strong>Items Loaded:</strong> {stotras.length}
+                  </li>
+                  <li>
+                    <strong>Current Page:</strong> {currentPage}
+                  </li>
                 </ul>
               </div>
             )}
 
             <hr />
 
-            <h6>Other Categories</h6>
+            <h6>Browse by Category</h6>
             <div className="d-grid gap-2">
+              <a href="/stotras" className="btn btn-outline-primary btn-sm">
+                📿 Hymns & Prayers
+              </a>
               <a href="/ashtothram" className="btn btn-outline-secondary btn-sm">
-                Ashtottara Shatanamavali
+                🕉️ Ashtottara Shatanamavali
               </a>
               <a href="/sahasranamavali" className="btn btn-outline-secondary btn-sm">
-                Sahasranamavali
+                📜 Sahasranamavali
               </a>
               <a href="/sahasranamam" className="btn btn-outline-secondary btn-sm">
-                Sahasranamam
+                🙏 Sahasranamam
               </a>
             </div>
           </div>

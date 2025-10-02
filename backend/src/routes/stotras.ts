@@ -16,13 +16,28 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     console.log('📋 Stotras API called with query:', req.query);
 
-    const { lang = 'en', limit = '50', offset = '0', status } = req.query;
+    const { lang = 'en', limit = '50', offset = '0', status, categoryId, page } = req.query;
 
     const languageCode = getLanguageCode(lang as string);
     const limitNum = Math.min(parseInt(limit as string) || 50, 100); // Max 100
-    const offsetNum = Math.max(parseInt(offset as string) || 0, 0);
 
-    console.log('🔍 Query parameters:', { languageCode, limitNum, offsetNum, status });
+    // Support both offset and page-based pagination
+    let offsetNum: number;
+    if (page) {
+      const pageNum = Math.max(parseInt(page as string) || 1, 1);
+      offsetNum = (pageNum - 1) * limitNum;
+    } else {
+      offsetNum = Math.max(parseInt(offset as string) || 0, 0);
+    }
+
+    console.log('🔍 Query parameters:', {
+      languageCode,
+      limitNum,
+      offsetNum,
+      status,
+      categoryId,
+      page,
+    });
 
     // Build query
     const query: any = {
@@ -44,6 +59,17 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 
     // Add language filter - only include documents that have the requested language
     query[`translations.${languageCode}`] = { $exists: true };
+
+    // Add category filter if provided
+    if (categoryId && typeof categoryId === 'string') {
+      // Support filtering by any of the category types
+      query.$or = [
+        { 'categories.typeIds': new mongoose.Types.ObjectId(categoryId) },
+        { 'categories.devaIds': new mongoose.Types.ObjectId(categoryId) },
+        { 'categories.byNumberIds': new mongoose.Types.ObjectId(categoryId) },
+      ];
+      console.log('🏷️ Category filter applied:', categoryId);
+    }
 
     console.log('🔎 MongoDB query:', JSON.stringify(query, null, 2));
 
@@ -77,7 +103,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       stotras: transformedStotras,
       pagination: {
         total,
-        page: Math.floor(offsetNum / limitNum) + 1,
+        page: page ? parseInt(page as string) : Math.floor(offsetNum / limitNum) + 1,
         limit: limitNum,
         offset: offsetNum,
         hasNext: offsetNum + limitNum < total,
