@@ -190,5 +190,9 @@ export const kn = {
   stotra: {
     stotra: 'ಸ್ತೋತ್ರ',
     stotra_meaning: 'ಸ್ತೋತ್ರದ ಅರ್ಥ',
+    ashtottara_shatanamavali: 'ಅಷ್ಟೋತ್ತರ ಶತನಾಮಾವಳಿ',
+    sahasranamavali: 'ಸಹಸ್ರನಾಮಾವಳಿ',
+    stotras: 'ಸ್ತೋತ್ರಗಳು ಮತ್ತು ಪ್ರಾರ್ಥನೆಗಳು',
+    all_stotras: 'ಎಲ್ಲಾ ಸ್ತೋತ್ರಗಳು',
   },
 };

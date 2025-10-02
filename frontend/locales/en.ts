@@ -294,5 +294,9 @@ export const en = {
   stotra: {
     stotra: 'Stotra',
     stotra_meaning: 'Stotra Meaning',
+    ashtottara_shatanamavali: 'Ashtottara Shatanamavali',
+    sahasranamavali: 'Sahasranamavali',
+    stotras: 'Hymns & Prayers',
+    all_stotras: 'All Stotras',
   },
 };

@@ -63,7 +63,7 @@ export default function PanchangamTable({ date, showViewMore = false }: Panchang
   const [displayYogas, setDisplayYogas] = useState<DisplayAnga[]>([]);
   const [displayKaranas, setDisplayKaranas] = useState<DisplayAnga[]>([]);
 
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { lat, lng, city, country, setLocationData } = useLocation();
   const panchangamDate = date ? new Date(date) : new Date();
 
@@ -298,6 +298,10 @@ export default function PanchangamTable({ date, showViewMore = false }: Panchang
       setDisplayKaranas([]);
     }
   }, [lat, lng, date]);
+
+  const handleViewMoreClick = () => {
+    setIsExpanded(!isExpanded);
+  };
 
   const renderAngaItem = (
     title: string,
@@ -639,11 +643,12 @@ export default function PanchangamTable({ date, showViewMore = false }: Panchang
         {showViewMore && !isExpanded && (
           <div className="mt-3 text-center">
             <Button
-              className="gr-hover-y gr-text-9 btn btn btn-primary mx-auto py-2"
+              variant="outline-primary"
               size="sm"
-              onClick={() => setIsExpanded(true)}
+              onClick={handleViewMoreClick}
+              className="px-4"
             >
-              {'View More'}
+              {locale === 'te' ? 'మరిన్ని చూడండి' : 'View More'}
             </Button>
           </div>
         )}
@@ -763,6 +768,18 @@ export default function PanchangamTable({ date, showViewMore = false }: Panchang
                 </li>
               </ul>
             </div>
+            {showViewMore && isExpanded && (
+              <div className="mt-3 text-center">
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={handleViewMoreClick}
+                  className="px-4"
+                >
+                  {locale === 'te' ? 'తక్కువ చూపించు' : 'Show Less'}
+                </Button>
+              </div>
+            )}
           </>
         )}
       </div>

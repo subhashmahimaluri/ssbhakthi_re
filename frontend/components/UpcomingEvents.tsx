@@ -3,7 +3,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { calculateFestivalDates } from '@/lib/festivalData';
 import { calculateVrathDates } from '@/lib/vrathData';
 import { addDays, format, isWithinInterval } from 'date-fns';
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Button } from 'react-bootstrap';
 
 interface UpcomingEvent {
   date: Date;
@@ -12,8 +13,17 @@ interface UpcomingEvent {
   type: 'festival' | 'vrath';
 }
 
-const UpcomingEvents: React.FC = () => {
+interface UpcomingEventsProps {
+  isHomePage?: boolean;
+  maxHeight?: number;
+}
+
+const UpcomingEvents: React.FC<UpcomingEventsProps> = ({ isHomePage = false, maxHeight = 460 }) => {
   const { locale } = useTranslation();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [showViewMore, setShowViewMore] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [contentHeight, setContentHeight] = useState(0);
 
   // Calculate upcoming events (next 30 days)
   const upcomingEvents = useMemo(() => {
@@ -82,50 +92,96 @@ const UpcomingEvents: React.FC = () => {
     return monthsInTelugu[date.getMonth()];
   };
 
+  // Check content height and show/hide view more button
+  useEffect(() => {
+    if (isHomePage && contentRef.current) {
+      const height = contentRef.current.scrollHeight;
+      setContentHeight(height);
+      setShowViewMore(height > maxHeight);
+    }
+  }, [upcomingEvents, isHomePage, maxHeight]);
+
+  const handleViewMoreClick = () => {
+    setIsExpanded(!isExpanded);
+  };
+
   return (
     <div className="px-4 py-3">
       <h3 className="mb-3">
         {locale === 'te' ? 'రాబోయే పండుగలు & వ్రతాలు' : 'Upcoming Festivals & Vraths'}
       </h3>
-      {upcomingEvents.length === 0 ? (
-        <p className="text-muted">
-          {locale === 'te'
-            ? 'తదుపరి 30 రోజుల్లో పండుగలు లేదా వ్రతాలు లేవు'
-            : 'No festivals or vraths in the next 30 days'}
-        </p>
-      ) : (
-        <ul className="list-unstyled">
-          {upcomingEvents.map((event, index) => (
-            <li key={index} className="border-bottom mb-2 pb-2">
-              {locale === 'te' ? (
-                <>
-                  <span className="fw-bold text-primary">
-                    {getMonthNameInTelugu(event.date)} {format(event.date, 'dd')},{' '}
-                    {getDayNameInTelugu(event.date)}
-                  </span>
-                  <span className="mx-2">-</span>
-                  <span>
-                    {event.nameTelugu}
-                    {event.type === 'vrath' && (
-                      <span className="text-muted small ms-1">(వ్రతం)</span>
-                    )}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="fw-bold text-primary">
-                    {format(event.date, 'MMM dd')}, {format(event.date, 'EEEE')}
-                  </span>
-                  <span className="mx-2">-</span>
-                  <span>
-                    {event.name}
-                    {event.type === 'vrath' && ' (Vrath)'}
-                  </span>
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
+      <div
+        ref={contentRef}
+        style={{
+          maxHeight: isHomePage && !isExpanded ? `${maxHeight}px` : 'none',
+          overflow: isHomePage && !isExpanded ? 'hidden' : 'visible',
+          transition: 'max-height 0.3s ease-in-out',
+        }}
+      >
+        {upcomingEvents.length === 0 ? (
+          <p className="text-muted">
+            {locale === 'te'
+              ? 'తదుపరి 30 రోజుల్లో పండుగలు లేదా వ్రతాలు లేవు'
+              : 'No festivals or vraths in the next 30 days'}
+          </p>
+        ) : (
+          <ul className="list-unstyled">
+            {upcomingEvents.map((event, index) => (
+              <li key={index} className="border-bottom mb-2 pb-2">
+                {locale === 'te' ? (
+                  <>
+                    <span className="fw-bold text-primary">
+                      {getMonthNameInTelugu(event.date)} {format(event.date, 'dd')},{' '}
+                      {getDayNameInTelugu(event.date)}
+                    </span>
+                    <span className="mx-2">-</span>
+                    <span>
+                      {event.nameTelugu}
+                      {event.type === 'vrath' && (
+                        <span className="text-muted small ms-1">(వ్రతం)</span>
+                      )}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="fw-bold text-primary">
+                      {format(event.date, 'MMM dd')}, {format(event.date, 'EEEE')}
+                    </span>
+                    <span className="mx-2">-</span>
+                    <span>
+                      {event.name}
+                      {event.type === 'vrath' && ' (Vrath)'}
+                    </span>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {isHomePage && showViewMore && !isExpanded && (
+        <div className="mt-3 text-center">
+          <Button
+            variant="outline-primary"
+            size="sm"
+            onClick={handleViewMoreClick}
+            className="px-4"
+          >
+            {locale === 'te' ? 'మరిన్ని చూడండి' : 'View More'}
+          </Button>
+        </div>
+      )}
+      {isHomePage && showViewMore && isExpanded && (
+        <div className="mt-3 text-center">
+          <Button
+            variant="outline-primary"
+            size="sm"
+            onClick={handleViewMoreClick}
+            className="px-4"
+          >
+            {locale === 'te' ? 'తక్కువ చూపించు' : 'Show Less'}
+          </Button>
+        </div>
       )}
     </div>
   );

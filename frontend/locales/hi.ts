@@ -193,5 +193,9 @@ export const hi = {
   stotra: {
     stotra: 'स्तोत्र',
     stotra_meaning: 'स्तोत्र का अर्थ',
+    ashtottara_shatanamavali: 'अष्टोत्तर शतनामावलि',
+    sahasranamavali: 'सहस्रनामावलि',
+    stotras: 'स्तोत्र और प्रार्थना',
+    all_stotras: 'सभी स्तोत्र',
   },
 };

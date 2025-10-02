@@ -1,5 +1,7 @@
 'use client';
 // pages/index.tsx - Home Page
+import FeaturedArticles from '@/components/FeaturedArticles';
+import HomeBlock from '@/components/HomeBlock';
 import Layout from '@/components/Layout/Layout';
 import SearchBox from '@/components/Layout/SearchBox';
 import PanchangamTable from '@/components/PanchangamTable';
@@ -22,15 +24,15 @@ const HomePage: React.FC = () => {
 
   return (
     <Layout title={title} description={description}>
-      <Row className="mt-25 py-5">
-        <Col lg="5" md="12" className="my-5 py-5">
+      <Row className="mt-25 pt-5">
+        <Col lg="5" md="12" className="mt-5 pt-5">
           <div className="right-container shadow-1 bg-white text-black">
             <SearchBox layout="vertical" />
           </div>
 
           {/* Upcoming Festivals and Vraths Section */}
           <div className="right-container shadow-1 mt-4 bg-white text-black">
-            <UpcomingEvents />
+            <UpcomingEvents isHomePage={true} />
           </div>
 
           <div className="right-container shadow-1 mt-4 bg-white text-black">
@@ -64,12 +66,28 @@ const HomePage: React.FC = () => {
             </div>
           </div>
         </Col>
-        <Col lg="7" md="12" className="my-5 py-5">
+        <Col lg="7" md="12" className="mt-5 pt-5">
           <div className="left-container shadow-1 panchangam-block bg-white">
             <PanchangamTable showViewMore={true} />
           </div>
         </Col>
       </Row>
+      <Row className="justify-content-center">
+        <HomeBlock
+          title={t.stotra.ashtottara_shatanamavali}
+          path="/ashtothram"
+          categoryKey="ashtothram"
+          showItems={5}
+        />
+        <HomeBlock
+          title={t.stotra.sahasranamavali}
+          path="/sahasranamavali"
+          categoryKey="sahasranamavali"
+          showItems={5}
+        />
+        <HomeBlock title={t.stotra.stotras} path="/stotras" categoryKey="stotras" showItems={5} />
+      </Row>
+      <FeaturedArticles showItems={4} />
     </Layout>
   );
 };

@@ -295,5 +295,9 @@ export const te = {
   stotra: {
     stotra: 'స్తోత్రం',
     stotra_meaning: 'అర్థం',
+    ashtottara_shatanamavali: 'అష్టోత్తర శతనామావళి',
+    sahasranamavali: 'సహస్రనామావళి',
+    stotras: 'స్తోత్రాలు మరియు ప్రార్థనలు',
+    all_stotras: 'అన్ని స్తోత్రాలు',
   },
 };
