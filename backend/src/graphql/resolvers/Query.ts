@@ -1,4 +1,5 @@
 import { GraphQLError } from 'graphql';
+import mongoose from 'mongoose';
 import { Article, Category, Comment, Content, MediaAsset, Tag, User } from '../../models';
 import { QueryResolvers } from '../__generated__/types';
 import { GraphQLContext } from '../context';
@@ -248,5 +249,208 @@ export const Query: QueryResolvers<GraphQLContext> = {
       items,
       total,
     };
+  },
+
+  search: async (
+    _: any,
+    args: {
+      filters: {
+        keyword?: string | null;
+        category?: string | null;
+        contentType?: string | null;
+        lang?: string | null;
+      };
+      limit: number;
+      offset: number;
+    }
+  ) => {
+    try {
+      const { keyword, category, contentType, lang = 'en' } = args.filters || {};
+      const { limit, offset } = args;
+
+      // Build base query
+      let query: any = {
+        status: 'published',
+      };
+
+      // Add text search if keyword is provided
+      if (keyword && keyword.trim()) {
+        // For category searches, try text search first, then fallback to title search
+        if (category && category !== 'All') {
+          // Try combining text search with category filter
+          const textQuery = { ...query, $text: { $search: keyword.trim() } };
+          const textResults = await Content.find(textQuery).lean();
+
+          if (textResults.length === 0) {
+            // Fallback to title search if text search fails
+            console.log('⚠️ Text search failed, falling back to title search');
+            const titleSearchQuery = {
+              ...query,
+              $or: [
+                ...(query.$or || []),
+                { 'translations.en.title': { $regex: keyword.trim(), $options: 'i' } },
+                { 'translations.te.title': { $regex: keyword.trim(), $options: 'i' } },
+                { 'translations.hi.title': { $regex: keyword.trim(), $options: 'i' } },
+                { 'translations.kn.title': { $regex: keyword.trim(), $options: 'i' } },
+              ],
+            };
+            query.$or = titleSearchQuery.$or;
+          } else {
+            query.$text = { $search: keyword.trim() };
+          }
+        } else {
+          query.$text = { $search: keyword.trim() };
+        }
+      }
+
+      // Add content type filter if specified
+      if (contentType) {
+        query.contentType = contentType.toLowerCase();
+      } else if (category && category !== 'All') {
+        // Map frontend categories to MongoDB ObjectIds and content types
+        const categoryMapping: Record<string, { contentType: string; categoryIds?: string[] }> = {
+          stotras: { contentType: 'stotra' },
+          sahasranamam: {
+            contentType: 'stotra',
+            categoryIds: ['68ac2239bfcc70ec4468aa89', '68dce4a832e525e497f29abc'], // Sahasranama Stotra IDs
+          },
+          ashtottara_shatanamavali: {
+            contentType: 'stotra',
+            categoryIds: ['68ac2239bfcc70ec4468aa8c'], // Ashtottara Shatanamavali ID
+          },
+          sahasranamavali: {
+            contentType: 'stotra',
+            categoryIds: ['68ac2239bfcc70ec4468aa8f'], // Sahasranamavali ID
+          },
+          articles: { contentType: 'article' },
+        };
+
+        const mapping = categoryMapping[category];
+        if (mapping) {
+          query.contentType = mapping.contentType;
+
+          // Add category filtering for stotras by ObjectIds
+          if (mapping.categoryIds && mapping.contentType === 'stotra') {
+            const categoryObjectIds = mapping.categoryIds.map(
+              id => new mongoose.Types.ObjectId(id)
+            );
+
+            // Search in any category field (typeIds, devaIds, byNumberIds)
+            query.$or = [
+              { 'categories.typeIds': { $in: categoryObjectIds } },
+              { 'categories.devaIds': { $in: categoryObjectIds } },
+              { 'categories.byNumberIds': { $in: categoryObjectIds } },
+            ];
+
+            console.log(
+              `🏷️ Category filter applied: ${category} with ObjectIds:`,
+              categoryObjectIds
+            );
+          }
+        }
+      }
+
+      // Execute search with pagination
+      const [results, totalCount] = await Promise.all([
+        Content.find(query)
+          .sort(keyword ? { score: { $meta: 'textScore' } } : { updatedAt: -1 })
+          .skip(offset)
+          .limit(limit)
+          .lean(),
+        Content.countDocuments(query),
+      ]);
+
+      // Transform results for frontend
+      const transformedResults = results.map((content: any) => {
+        // Get translation for the requested language or fallback
+        const translation =
+          content.translations[lang || 'en'] ||
+          content.translations.en ||
+          content.translations.te ||
+          content.translations.hi ||
+          content.translations.kn ||
+          Object.values(content.translations)[0];
+
+        // Handle image URL
+        let imageUrl = null;
+        if (translation?.videoId) {
+          imageUrl = `https://i.ytimg.com/vi/${translation.videoId}/hq720.jpg`;
+        } else if (content.imageUrl) {
+          imageUrl = content.imageUrl;
+        }
+
+        // Get categories as strings (simplified for now)
+        const categories: string[] = [];
+        if (content.categories?.typeIds?.length) {
+          categories.push(content.contentType);
+        }
+
+        return {
+          id: content._id.toString(),
+          contentType: content.contentType.toUpperCase(),
+          canonicalSlug: content.canonicalSlug,
+          title: translation?.title || content.stotraTitle || 'Untitled',
+          description: translation?.stotraMeaning || translation?.body?.substring(0, 200) || '',
+          imageUrl,
+          categories,
+          createdAt: content.createdAt,
+          updatedAt: content.updatedAt,
+        };
+      });
+
+      return {
+        results: transformedResults,
+        totalCount,
+        hasMore: offset + limit < totalCount,
+      };
+    } catch (error) {
+      console.error('Search error:', error);
+      throw new GraphQLError('Search failed', {
+        extensions: { code: 'SEARCH_ERROR' },
+      });
+    }
+  },
+
+  content: async (_: any, { canonicalSlug }: { canonicalSlug: string }) => {
+    const content = await Content.findOne({
+      canonicalSlug,
+      status: 'published',
+    });
+
+    if (!content) {
+      throw new GraphQLError(`Content with slug '${canonicalSlug}' not found`, {
+        extensions: { code: 'NOT_FOUND' },
+      });
+    }
+
+    return content as any;
+  },
+
+  contents: async (
+    _: any,
+    args: {
+      filters?: {
+        contentType?: string | null;
+        keyword?: string | null;
+      } | null;
+      limit: number;
+      offset: number;
+    }
+  ) => {
+    const { filters = {}, limit = 20, offset = 0 } = args;
+    const query: any = { status: 'published' };
+
+    if (filters?.contentType) {
+      query.contentType = filters.contentType.toLowerCase();
+    }
+
+    if (filters?.keyword) {
+      query.$text = { $search: filters.keyword };
+    }
+
+    return Content.find(query)
+      .sort(filters?.keyword ? { score: { $meta: 'textScore' } } : { updatedAt: -1 })
+      .skip(offset)
+      .limit(limit) as any;
   },
 };

@@ -124,6 +124,64 @@ body {
   cursor: pointer;
 }
 
+// Search Page Styles
+.search-page {
+  .search-result-image {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .job-card-hover {
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+      text-decoration: none;
+    }
+  }
+
+  .hover-bg-light:hover {
+    background-color: #f8f9fa !important;
+  }
+
+  .search-sidebar {
+    .category-list {
+      .badge {
+        font-size: 0.75rem;
+      }
+    }
+
+    .popular-searches,
+    .quick-links {
+      a:hover {
+        background-color: #f8f9fa;
+        transform: translateX(2px);
+        transition: all 0.2s ease;
+      }
+    }
+  }
+
+  .results-header {
+    border-left: 4px solid #{$orange};
+  }
+
+  .search-suggestions {
+    li {
+      margin-bottom: 0.5rem;
+      text-align: left;
+    }
+  }
+}
+
 .text-primary {
   --bs-text-opacity: 1;
   color: $orange !important;

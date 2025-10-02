@@ -13,15 +13,11 @@ function getLanguageCode(lang: string): LanguageCode {
 // GET /rest/articles - List all articles
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-
-
     const { lang = 'en', limit = '50', offset = '0', status } = req.query;
 
     const languageCode = getLanguageCode(lang as string);
     const limitNum = Math.min(parseInt(limit as string) || 50, 100); // Max 100
     const offsetNum = Math.max(parseInt(offset as string) || 0, 0);
-
-
 
     // Build query
     const query: any = {
@@ -54,6 +50,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const transformedArticles = articles.map(article => ({
       canonicalSlug: article.canonicalSlug,
       contentType: article.contentType,
+      articleTitle: article.articleTitle,
       status: article.status,
       imageUrl: article.imageUrl,
       translations: {
@@ -129,6 +126,7 @@ router.get('/:canonicalSlug', async (req: Request, res: Response): Promise<void>
     res.json({
       canonicalSlug: article.canonicalSlug,
       contentType: article.contentType,
+      articleTitle: article.articleTitle,
       status: article.status,
       imageUrl: article.imageUrl,
       categories: article.categories,
@@ -162,6 +160,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     const {
       contentType = 'article',
       canonicalSlug,
+      articleTitle,
       status = 'draft',
       imageUrl,
       categories,
@@ -213,6 +212,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     const articleDoc = {
       contentType,
       canonicalSlug,
+      articleTitle: articleTitle || null,
       status,
       imageUrl,
       categories: categories || { typeIds: [], devaIds: [], byNumberIds: [] },
@@ -280,7 +280,7 @@ router.put('/:canonicalSlug', async (req: Request, res: Response): Promise<void>
     const { canonicalSlug } = req.params;
     console.log(`📝 Updating article '${canonicalSlug}' with data:`, req.body);
 
-    const { status, imageUrl, categories, translations } = req.body;
+    const { status, imageUrl, categories, translations, articleTitle } = req.body;
 
     // Find existing article
     const existingArticle = await Content.findOne({
@@ -304,6 +304,7 @@ router.put('/:canonicalSlug', async (req: Request, res: Response): Promise<void>
     if (status !== undefined) updateData.status = status;
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
     if (categories !== undefined) updateData.categories = categories;
+    if (articleTitle !== undefined) updateData.articleTitle = articleTitle;
 
     // Merge translations - preserve existing ones and add/update new ones
     if (translations) {

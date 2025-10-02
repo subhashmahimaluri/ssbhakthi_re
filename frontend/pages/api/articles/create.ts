@@ -54,13 +54,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    // Generate canonical slug
-    const canonicalSlug = articleData.slug || generateSlug(articleData.title);
-
     // Transform frontend data to backend format
     const backendData = {
       contentType: 'article',
-      canonicalSlug,
+      canonicalSlug:
+        articleData.canonicalSlug || generateSlug(articleData.articleTitle || articleData.title),
+      articleTitle: articleData.articleTitle || null,
       status: articleData.status || 'draft',
       imageUrl: articleData.featuredImage || null,
       categories: {
@@ -72,10 +71,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         [articleData.locale]: {
           title: articleData.title,
           seoTitle: articleData.seoTitle || null,
-          videoId: null,
+          videoId: articleData.videoId || null,
           stotra: null,
           stotraMeaning: null,
           body: articleData.body,
+          summary: articleData.summary || null,
         },
       },
     };

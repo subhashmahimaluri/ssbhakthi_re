@@ -13,6 +13,7 @@ export type ContentStatus = 'draft' | 'published';
 export interface ITranslation {
   title: string;
   seoTitle?: string | null;
+  summary?: string | null; // Summary or brief description
   videoId?: string | null;
 
   // Stotra-specific fields (used when contentType is 'stotra')
@@ -36,6 +37,7 @@ export interface IContent extends Document {
   contentType: ContentType;
   canonicalSlug: string;
   stotraTitle?: string | null; // Common title for all translations (used for Stotras)
+  articleTitle?: string | null; // Common title for all translations (used for Articles)
   categories: ICategories;
   imageUrl?: string | null;
   status: ContentStatus;
@@ -111,6 +113,22 @@ const ContentSchema = new Schema<IContent>(
         message: 'stotraTitle should only be used for stotra content type',
       },
     },
+    articleTitle: {
+      type: String,
+      default: null,
+      trim: true,
+      maxlength: 200,
+      validate: {
+        validator: function (this: IContent, v: string | null) {
+          // articleTitle is only relevant for article content type
+          if (this.contentType === 'stotra' && v) {
+            return false;
+          }
+          return true;
+        },
+        message: 'articleTitle should only be used for article content type',
+      },
+    },
     categories: {
       type: CategoriesSchema,
       required: true,
@@ -177,6 +195,53 @@ ContentSchema.index({ updatedAt: -1 });
 ContentSchema.index({ 'categories.typeIds': 1 });
 ContentSchema.index({ 'categories.devaIds': 1 });
 ContentSchema.index({ 'categories.byNumberIds': 1 });
+
+// Text search indexes for multilingual content
+ContentSchema.index(
+  {
+    'translations.en.title': 'text',
+    'translations.te.title': 'text',
+    'translations.hi.title': 'text',
+    'translations.kn.title': 'text',
+    'translations.en.summary': 'text',
+    'translations.te.summary': 'text',
+    'translations.hi.summary': 'text',
+    'translations.kn.summary': 'text',
+    'translations.en.stotra': 'text',
+    'translations.te.stotra': 'text',
+    'translations.hi.stotra': 'text',
+    'translations.kn.stotra': 'text',
+    'translations.en.body': 'text',
+    'translations.te.body': 'text',
+    'translations.hi.body': 'text',
+    'translations.kn.body': 'text',
+    stotraTitle: 'text',
+    articleTitle: 'text',
+  },
+  {
+    name: 'content_text_search',
+    weights: {
+      'translations.en.title': 10,
+      'translations.te.title': 10,
+      'translations.hi.title': 10,
+      'translations.kn.title': 10,
+      stotraTitle: 10,
+      articleTitle: 10,
+      'translations.en.summary': 7,
+      'translations.te.summary': 7,
+      'translations.hi.summary': 7,
+      'translations.kn.summary': 7,
+      'translations.en.stotra': 5,
+      'translations.te.stotra': 5,
+      'translations.hi.stotra': 5,
+      'translations.kn.stotra': 5,
+      'translations.en.body': 3,
+      'translations.te.body': 3,
+      'translations.hi.body': 3,
+      'translations.kn.body': 3,
+    },
+  }
+);
 
 // Static method to find by slug in any language
 ContentSchema.statics['findBySlug'] = function (slug: string, language?: LanguageCode) {

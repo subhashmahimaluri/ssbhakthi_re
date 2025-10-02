@@ -102,7 +102,12 @@ class App {
       await apolloServer.start();
 
       // Mount GraphQL endpoint with authentication middleware
-      this.app.use('/graphql', requireAuth, createGraphQLMiddleware());
+      // For development, we'll bypass auth for public GraphQL access
+      if (process.env['NODE_ENV'] === 'development') {
+        this.app.use('/graphql', createGraphQLMiddleware());
+      } else {
+        this.app.use('/graphql', requireAuth, createGraphQLMiddleware());
+      }
     } catch (error) {}
   }
 

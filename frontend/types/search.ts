@@ -11,7 +11,12 @@ export interface SearchFilters {
 export interface SearchResult {
   id: string;
   canonicalSlug: string;
-  contentType: 'stotra' | 'sahasranamam' | 'ashtottara_shatanamavali' | 'sahasranamavali' | 'article';
+  contentType:
+    | 'stotra'
+    | 'sahasranamam'
+    | 'ashtottara_shatanamavali'
+    | 'sahasranamavali'
+    | 'article';
   title: string;
   description?: string;
   imageUrl?: string;
@@ -60,18 +65,18 @@ export type ContentTypeMap = {
 };
 
 export const CONTENT_TYPE_ROUTES: ContentTypeMap = {
-  'Article': 'articles',
-  'Calendar': 'calendar',
+  Article: 'articles',
+  Calendar: 'calendar',
   'Ashtottara Shatanamavali': 'ashtothram',
   'Sahasra Namavali': 'sahasranamavali',
   'Sahasranama Stotram': 'sahasranamam',
-  'Stotra': 'stotras',
-  'stotra': 'stotras',
-  'sahasranamam': 'sahasranamam',
-  'ashtottara_shatanamavali': 'ashtothram',
-  'sahasranamavali': 'sahasranamavali',
-  'articles': 'articles',
-  'article': 'articles',
+  Stotra: 'stotras',
+  stotra: 'stotras',
+  sahasranamam: 'sahasranamam',
+  ashtottara_shatanamavali: 'ashtothram',
+  sahasranamavali: 'sahasranamavali',
+  articles: 'articles',
+  article: 'articles',
 };
 
 export const SEARCH_FILTER_OPTIONS = [

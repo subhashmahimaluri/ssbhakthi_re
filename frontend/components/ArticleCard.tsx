@@ -1,11 +1,13 @@
+import Image from 'next/image';
 import Link from 'next/link';
-import { Card, Col } from 'react-bootstrap';
+import { Col } from 'react-bootstrap';
 
 interface ArticleTranslation {
   title: string;
   seoTitle: string;
   videoId?: string | null;
   body: string;
+  summary?: string | null;
 }
 
 interface Article {
@@ -44,67 +46,35 @@ export default function ArticleCard({
 
   if (!translation) return null;
 
-  // Extract first paragraph or snippet from body HTML for preview
-  const getBodyPreview = (htmlBody: string): string => {
-    // Remove HTML tags and get first 150 characters
-    const textContent = htmlBody.replace(/<[^>]*>/g, '');
-    return textContent.length > 150 ? textContent.substring(0, 150) + '...' : textContent;
-  };
-
   return (
-    <Col md={6} lg={4} className="mb-4">
-      <Card className="h-100 hover-card shadow-sm">
-        <Card.Body className="d-flex flex-column">
-          <Card.Title className="h5 mb-3">
-            <Link
-              href={`/articles/${article.canonicalSlug}`}
-              className="text-decoration-none article-title-link"
-            >
-              {translation.title}
-            </Link>
-          </Card.Title>
-
-          {translation.body && (
-            <Card.Text className="text-muted flex-grow-1 mb-3">
-              {getBodyPreview(translation.body)}
-            </Card.Text>
+    <Col sm="12" md="6" lg="6" xl="4" className="h5 mb-3">
+      <Link
+        href={`/articles/${article.canonicalSlug}`}
+        className="feature-widget focus-reset d-flex flex-column min-height-px-280 rounded-4 gr-hover-shadow-1 border bg-white text-center"
+      >
+        <div className="mb-auto">
+          {translation.videoId ? (
+            <Image
+              className="img-fluid text-center"
+              src={`https://i.ytimg.com/vi/${translation.videoId}/hq720.jpg`}
+              alt={translation.title}
+              width={720}
+              height={405}
+              style={{ objectFit: 'cover' }}
+            />
+          ) : (
+            <div className="video-placeholder d-flex align-items-center justify-content-center position-relative">
+              <div className="video-title-overlay position-absolute end-0 start-0 p-3">
+                <span className="fw-bold text-white">{translation.title}</span>
+              </div>
+            </div>
           )}
-
-          <div className="mt-auto">
-            {translation.videoId && (
-              <div className="mb-2">
-                <small className="text-primary">
-                  <i className="bi bi-play-circle me-1"></i>
-                  Video Available
-                </small>
-              </div>
-            )}
-
-            {showCanonicalSlug && (
-              <div className="mb-2">
-                <small className="text-muted">
-                  <strong>ID:</strong> {article.canonicalSlug}
-                </small>
-              </div>
-            )}
-
-            <div>
-              <small className="text-muted">
-                Updated: {new Date(article.updatedAt).toLocaleDateString()}
-              </small>
-            </div>
-
-            <div className="mt-2">
-              <Link
-                href={`/articles/${article.canonicalSlug}`}
-                className="btn btn-outline-primary btn-sm"
-              >
-                Read Article
-              </Link>
-            </div>
-          </div>
-        </Card.Body>
-      </Card>
+          <h3 className="gr-text-7 text-blackish-blue px-4 py-6 text-left">{translation.title}</h3>
+          <span className="btn-link with-icon gr-text-blue gr-text-9 fw-bold float-right text-right text-end">
+            Read More <i className="icon icon-tail-right fw-bold"></i>
+          </span>
+        </div>
+      </Link>
     </Col>
   );
 }

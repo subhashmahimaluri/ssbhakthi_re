@@ -1,18 +1,12 @@
-import {
-  ApolloClient,
-  createHttpLink,
-  from,
-  InMemoryCache,
-  NormalizedCacheObject,
-} from '@apollo/client';
+import { ApolloClient, createHttpLink, from, InMemoryCache } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 
-let apolloClient: ApolloClient<NormalizedCacheObject> | undefined;
+let apolloClient: any;
 
 function createApolloClient(accessToken?: string) {
   const httpLink = createHttpLink({
-    uri: process.env.NEXT_PUBLIC_BACKEND_GRAPHQL_URL || 'http://localhost:3001/graphql',
+    uri: process.env.NEXT_PUBLIC_BACKEND_GRAPHQL_URL || 'http://localhost:4000/graphql',
   });
 
   const authLink = setContext((_, { headers }) => {
@@ -24,15 +18,18 @@ function createApolloClient(accessToken?: string) {
     };
   });
 
-  const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
+  const errorLink = onError(errorResponse => {
+    const { graphQLErrors, networkError } = errorResponse;
     if (graphQLErrors) {
-      graphQLErrors.forEach(({ message, locations, path }) => {
+      graphQLErrors.forEach((error: any) => {
         // GraphQL error occurred
+        console.error('GraphQL error:', error.message);
       });
     }
 
     if (networkError) {
       // Network error occurred
+      console.error('Network error:', networkError);
 
       // Handle 401 errors by redirecting to sign-in
       if ('statusCode' in networkError && networkError.statusCode === 401) {

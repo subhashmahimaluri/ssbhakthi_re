@@ -1,5 +1,6 @@
+import { SEARCH_FILTER_OPTIONS } from '@/types/search';
 import { useRouter } from 'next/router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Select from 'react-select';
 
 type OptionType = {
@@ -8,25 +9,34 @@ type OptionType = {
 };
 
 interface SearchBarProps {
-  inputWidth: number;
-  selectWidth: number;
-  btnWidth: number;
+  // No specific width props needed - using responsive Bootstrap grid
 }
 
-const defaultOptions: OptionType[] = [
-  { value: 'stotra', label: 'Stotras' },
-  { value: 'sahasranama_stotram', label: 'Sahasranama Stotram' },
-  { value: 'ashtottara_shatanamavali', label: 'Ashtottara Shatanamavali' },
-  { value: 'sahasra_namavali', label: 'Sahasra Namavali' },
-  { value: 'article', label: 'Bhakthi Articles' },
-  { value: 'calendar', label: 'Telugu Calendar' },
-];
-
-const SearchBox: React.FC<SearchBarProps> = ({ inputWidth, selectWidth, btnWidth }) => {
+const SearchBox: React.FC<SearchBarProps> = () => {
   const router = useRouter();
 
   const [name, setName] = useState<string>('');
   const [value, setValue] = useState<OptionType | null>(null);
+
+  // Populate default values from URL query parameters
+  useEffect(() => {
+    if (router.isReady) {
+      const { keyword, category } = router.query;
+
+      // Set keyword from URL
+      if (keyword && typeof keyword === 'string') {
+        setName(decodeURIComponent(keyword));
+      }
+
+      // Set category from URL
+      if (category && typeof category === 'string') {
+        const categoryOption = SEARCH_FILTER_OPTIONS.find(option => option.value === category);
+        if (categoryOption) {
+          setValue(categoryOption);
+        }
+      }
+    }
+  }, [router.isReady, router.query]);
 
   const onDropdownChange = (selected: OptionType | null) => {
     setValue(selected);
@@ -48,26 +58,39 @@ const SearchBox: React.FC<SearchBarProps> = ({ inputWidth, selectWidth, btnWidth
   return (
     <div className="search-box shadow-7 px-4 pb-4 pt-4">
       <form onSubmit={handleSubmit} className="search-form">
-        <div className="row mx-n5 justify-content-center">
-          <div className={`w-${inputWidth} mb-3 px-3`}>
-            <div className="form-group min-height-px-50 mb-0">
+        <div className="row g-2 align-items-end">
+          <div className="col-12 col-md-5">
+            <div className="form-group mb-0">
               <input
-                className="form-control gr-text-9 h-100 border"
+                className="form-control gr-text-9 border"
                 type="text"
                 id="keyword"
                 placeholder="Stotra Name or keyword"
                 value={name}
                 onChange={e => setName(e.target.value)}
+                style={{ minHeight: '50px' }}
               />
             </div>
           </div>
-          <div className={`w-${selectWidth} mb-4 px-3`}>
-            <Select options={defaultOptions} value={value} onChange={onDropdownChange} />
+          <div className="col-12 col-md-4">
+            <Select
+              options={SEARCH_FILTER_OPTIONS}
+              value={value}
+              onChange={onDropdownChange}
+              styles={{
+                control: provided => ({
+                  ...provided,
+                  minHeight: '50px',
+                  border: '1px solid #ced4da',
+                }),
+              }}
+            />
           </div>
-          <div className={`w-${btnWidth} md-100 px-3`}>
+          <div className="col-12 col-md-3">
             <button
               type="submit"
-              className="btn btn-primary3 w-100 min-height-px-50 line-height-reset"
+              className="btn btn-primary3 w-100 line-height-reset"
+              style={{ minHeight: '50px' }}
             >
               Search
             </button>

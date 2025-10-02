@@ -81,9 +81,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const transformedArticle = {
         id: article.canonicalSlug,
         title: translation?.title || 'Untitled',
-        slug: article.canonicalSlug,
+        articleTitle: article.articleTitle || '',
+        canonicalSlug: article.canonicalSlug,
         summary: translation?.summary || '',
         body: translation?.body || '',
+        videoId: translation?.videoId || '',
         status: article.status,
         locale: locale,
         seoTitle: translation?.seoTitle || '',
@@ -132,7 +134,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Transform frontend data to backend format
       const backendData = {
         contentType: 'article',
-        canonicalSlug: slug,
+        canonicalSlug: articleData.canonicalSlug || slug,
+        articleTitle: articleData.articleTitle || null,
         status: articleData.status || 'draft',
         imageUrl: articleData.featuredImage || null,
         categories: {
@@ -144,10 +147,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           [articleData.locale]: {
             title: articleData.title,
             seoTitle: articleData.seoTitle || null,
-            videoId: null,
+            videoId: articleData.videoId || null,
             stotra: null,
             stotraMeaning: null,
             body: articleData.body,
+            summary: articleData.summary || null,
           },
         },
       };

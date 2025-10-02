@@ -12,7 +12,6 @@ interface ArticleEditorProps {
 interface ArticleData {
   id: string;
   title: string;
-  slug: string;
   summary: string;
   body: string;
   status: string;
@@ -35,10 +34,12 @@ export default function ArticleEditor({ articleId }: ArticleEditorProps) {
   const [errors, setErrors] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
+    articleTitle: '', // Common title for all translations
+    canonicalSlug: '', // Common slug for all translations
     title: { te: '', en: '', hi: '', kn: '' },
-    slug: { te: '', en: '', hi: '', kn: '' },
     summary: { te: '', en: '', hi: '', kn: '' },
     body: { te: '', en: '', hi: '', kn: '' },
+    videoId: { te: '', en: '', hi: '', kn: '' }, // YouTube video ID per language
     status: 'draft' as 'draft' | 'published' | 'scheduled',
     scheduledAt: '',
     seoTitle: '',
@@ -75,10 +76,12 @@ export default function ArticleEditor({ articleId }: ArticleEditorProps) {
 
       // Transform single language article to multilingual format
       const newFormData = {
+        articleTitle: article.articleTitle || '', // Common title for all translations
+        canonicalSlug: article.canonicalSlug || '', // Common slug for all translations
         title: { te: '', en: '', hi: '', kn: '' },
-        slug: { te: '', en: '', hi: '', kn: '' },
         summary: { te: '', en: '', hi: '', kn: '' },
         body: { te: '', en: '', hi: '', kn: '' },
+        videoId: { te: '', en: '', hi: '', kn: '' }, // YouTube video ID per language
         status: article.status as 'draft' | 'published' | 'scheduled',
         scheduledAt: '',
         seoTitle: article.seoTitle || '',
@@ -91,10 +94,11 @@ export default function ArticleEditor({ articleId }: ArticleEditorProps) {
 
       // Set the current locale data
       newFormData.title[currentLocale as keyof typeof newFormData.title] = article.title || '';
-      newFormData.slug[currentLocale as keyof typeof newFormData.slug] = article.slug || '';
       newFormData.summary[currentLocale as keyof typeof newFormData.summary] =
         article.summary || '';
       newFormData.body[currentLocale as keyof typeof newFormData.body] = article.body || '';
+      newFormData.videoId[currentLocale as keyof typeof newFormData.videoId] =
+        article.videoId || '';
 
       setFormData(newFormData);
     } catch (error) {
@@ -105,31 +109,48 @@ export default function ArticleEditor({ articleId }: ArticleEditorProps) {
   };
 
   const generateSlug = (title: string) => {
-    return title
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .trim();
+    if (!title.trim()) return '';
+
+    return (
+      title
+        .toLowerCase()
+        // Replace common diacritics and special characters
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        // Keep only alphanumeric characters, spaces, and hyphens
+        .replace(/[^a-z0-9\s-]/g, '')
+        // Replace multiple spaces/hyphens with single hyphen
+        .replace(/[\s-]+/g, '-')
+        // Remove leading/trailing hyphens
+        .replace(/^-+|-+$/g, '')
+        .trim()
+    );
   };
 
   const handleTitleChange = (value: string) => {
     setFormData(prev => ({
       ...prev,
       title: { ...prev.title, [currentLocale]: value },
-      slug: { ...prev.slug, [currentLocale]: generateSlug(value) },
     }));
   };
 
   const handleFieldChange = (field: string, value: string) => {
-    if (field === 'title') {
+    if (field === 'articleTitle') {
+      setFormData(prev => ({
+        ...prev,
+        articleTitle: value,
+        // Auto-generate canonical slug from article title
+        canonicalSlug: generateSlug(value),
+      }));
+    } else if (field === 'canonicalSlug') {
+      setFormData(prev => ({
+        ...prev,
+        canonicalSlug: value,
+      }));
+    } else if (field === 'title') {
       setFormData(prev => ({
         ...prev,
         title: { ...prev.title, [currentLocale]: value },
-      }));
-    } else if (field === 'slug') {
-      setFormData(prev => ({
-        ...prev,
-        slug: { ...prev.slug, [currentLocale]: value },
       }));
     } else if (field === 'summary') {
       setFormData(prev => ({
@@ -140,6 +161,11 @@ export default function ArticleEditor({ articleId }: ArticleEditorProps) {
       setFormData(prev => ({
         ...prev,
         body: { ...prev.body, [currentLocale]: value },
+      }));
+    } else if (field === 'videoId') {
+      setFormData(prev => ({
+        ...prev,
+        videoId: { ...prev.videoId, [currentLocale]: value },
       }));
     } else {
       setFormData(prev => ({ ...prev, [field]: value }));
@@ -181,9 +207,11 @@ export default function ArticleEditor({ articleId }: ArticleEditorProps) {
     try {
       const articleData = {
         title: formData.title[currentLocale as keyof typeof formData.title],
-        slug: formData.slug[currentLocale as keyof typeof formData.slug],
+        articleTitle: formData.articleTitle,
+        canonicalSlug: formData.canonicalSlug,
         summary: formData.summary[currentLocale as keyof typeof formData.summary],
         body: formData.body[currentLocale as keyof typeof formData.body],
+        videoId: formData.videoId[currentLocale as keyof typeof formData.videoId],
         status: formData.status,
         locale: currentLocale,
         scheduledAt: formData.scheduledAt || undefined,
@@ -305,8 +333,59 @@ export default function ArticleEditor({ articleId }: ArticleEditorProps) {
               </Card.Header>
             </Card>
 
-            {/* Title */}
+            {/* Common Article Title */}
             <Card className="mb-3">
+              <Card.Header className="bg-primary text-white">
+                <h6 className="mb-0">
+                  <i className="bi bi-star-fill me-2"></i>
+                  Common Article Information
+                </h6>
+                <small className="text-light">
+                  These fields apply to all language translations
+                </small>
+              </Card.Header>
+              <Card.Body>
+                <Form.Group className="mb-3">
+                  <Form.Label>Article Title (Common for all languages)</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={formData.articleTitle}
+                    onChange={e => handleFieldChange('articleTitle', e.target.value)}
+                    placeholder="Enter common article title (e.g., Significance of Diwali Festival)"
+                  />
+                  <Form.Text className="text-muted">
+                    This title is shared across all language translations and automatically
+                    generates the URL slug
+                  </Form.Text>
+                </Form.Group>
+
+                <Form.Group className="mb-0">
+                  <Form.Label>Canonical Slug (URL identifier)</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={formData.canonicalSlug}
+                    onChange={e => handleFieldChange('canonicalSlug', e.target.value)}
+                    placeholder="canonical-slug-for-all-languages"
+                  />
+                  <Form.Text className="text-muted">
+                    Auto-generated from the article title above. You can edit it if needed (e.g.,
+                    significance-of-diwali-festival)
+                  </Form.Text>
+                </Form.Group>
+              </Card.Body>
+            </Card>
+
+            {/* Language-specific Title */}
+            <Card className="mb-3">
+              <Card.Header>
+                <h6 className="mb-0">
+                  <i className="bi bi-translate me-2"></i>
+                  Language-specific Content ({currentLocale.toUpperCase()})
+                </h6>
+                <small className="text-muted">
+                  Content specific to {currentLocale.toUpperCase()} language
+                </small>
+              </Card.Header>
               <Card.Body>
                 <Form.Group className="mb-3">
                   <Form.Label>Title ({currentLocale.toUpperCase()})</Form.Label>
@@ -320,16 +399,6 @@ export default function ArticleEditor({ articleId }: ArticleEditorProps) {
                 </Form.Group>
 
                 <Form.Group className="mb-3">
-                  <Form.Label>Slug ({currentLocale.toUpperCase()})</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={formData.slug[currentLocale as keyof typeof formData.slug] || ''}
-                    onChange={e => handleFieldChange('slug', e.target.value)}
-                    placeholder="url-friendly-slug"
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
                   <Form.Label>Summary ({currentLocale.toUpperCase()})</Form.Label>
                   <Form.Control
                     as="textarea"
@@ -338,6 +407,20 @@ export default function ArticleEditor({ articleId }: ArticleEditorProps) {
                     onChange={e => handleFieldChange('summary', e.target.value)}
                     placeholder="Brief summary of the article"
                   />
+                </Form.Group>
+
+                <Form.Group className="mb-0">
+                  <Form.Label>YouTube Video ID ({currentLocale.toUpperCase()})</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={formData.videoId[currentLocale as keyof typeof formData.videoId] || ''}
+                    onChange={e => handleFieldChange('videoId', e.target.value)}
+                    placeholder="Enter YouTube video ID (e.g., dQw4w9WgXcQ)"
+                  />
+                  <Form.Text className="text-muted">
+                    YouTube video ID from the URL (e.g., for
+                    https://youtube.com/watch?v=dQw4w9WgXcQ, enter 'dQw4w9WgXcQ')
+                  </Form.Text>
                 </Form.Group>
               </Card.Body>
             </Card>
