@@ -1,0 +1,99 @@
+{
+  "description": "Surya Siddhanta astronomical constants and mean motion formulas",
+  "reference": "Based on Surya Siddhanta classical text and mean motion calculations",
+  "epoch": {
+    "description": "Kaliyuga epoch as per Surya Siddhanta",
+    "julianDay": 588465.75,
+    "gregorianDate": "3102-02-18 06:00:00 UTC",
+    "comment": "Kaliyuga start as per traditional Surya Siddhanta"
+  },
+  "meanMotions": {
+    "description": "Mean motion rates in degrees per day as per Surya Siddhanta",
+    "sun": {
+      "dailyMotion": 0.9856076,
+      "comment": "Sun's mean motion: ~360°/365.25 days"
+    },
+    "moon": {
+      "dailyMotion": 13.176358,
+      "comment": "Moon's mean motion: ~27.32 sidereal days per revolution"
+    },
+    "lunarApogee": {
+      "dailyMotion": 0.1114,
+      "comment": "Moon's apogee (slow eastward motion)"
+    },
+    "lunarNode": {
+      "dailyMotion": -0.0529,
+      "comment": "Moon's ascending node (westward motion)"
+    }
+  },
+  "initialPositions": {
+    "description": "Initial celestial positions at Kaliyuga epoch",
+    "sun": {
+      "longitude": 0.0,
+      "comment": "Sun at vernal equinox (0° Aries)"
+    },
+    "moon": {
+      "longitude": 0.0,
+      "comment": "Moon at vernal equinox initially"
+    },
+    "lunarApogee": {
+      "longitude": 90.0,
+      "comment": "Moon's apogee at 90° (Cancer)"
+    },
+    "lunarNode": {
+      "longitude": 0.0,
+      "comment": "Moon's ascending node at 0°"
+    }
+  },
+  "ayanamsa": {
+    "description": "Surya Siddhanta ayanamsa calculation",
+    "baseValue": 0.0,
+    "ratePerYear": 50.26,
+    "comment": "Precession rate ~50.26 arc-seconds per year",
+    "epochYear": -3101
+  },
+  "corrections": {
+    "description": "Simple periodic corrections for better accuracy",
+    "sunCorrections": [
+      {
+        "argument": "meanSunAnomaly",
+        "amplitude": 1.915,
+        "comment": "Equation of center (main term)"
+      },
+      {
+        "argument": "2 * meanSunAnomaly",
+        "amplitude": 0.02,
+        "comment": "Second harmonic correction"
+      }
+    ],
+    "moonCorrections": [
+      {
+        "argument": "meanMoonAnomaly",
+        "amplitude": 6.289,
+        "comment": "Moon's equation of center"
+      },
+      {
+        "argument": "meanElongation",
+        "amplitude": 1.274,
+        "comment": "Evection correction"
+      },
+      {
+        "argument": "meanSunAnomaly",
+        "amplitude": 0.658,
+        "comment": "Solar perturbation"
+      },
+      {
+        "argument": "2 * meanElongation",
+        "amplitude": -0.186,
+        "comment": "Variation correction"
+      }
+    ]
+  },
+  "constants": {
+    "tropicalYear": 365.24219878,
+    "synodicMonth": 29.530588853,
+    "siderealMonth": 27.321661547,
+    "anomalisticMonth": 27.554549878,
+    "comment": "Standard astronomical constants for validation"
+  }
+}
