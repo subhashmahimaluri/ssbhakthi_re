@@ -4,6 +4,21 @@ import { authOptions } from '../auth/[...nextauth]';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:4000';
 
+// Utility function to extract relative path from full URL
+function getRelativePath(imageUrl: string): string {
+  if (!imageUrl) return '';
+
+  // If already relative, return as is
+  if (imageUrl.startsWith('/')) return imageUrl;
+
+  try {
+    const url = new URL(imageUrl);
+    return url.pathname;
+  } catch {
+    return imageUrl;
+  }
+}
+
 // Helper function to get effective session (with dev bypass)
 async function getEffectiveSession(req: NextApiRequest, res: NextApiResponse) {
   const session = await getServerSession(req, res, authOptions);
@@ -61,7 +76,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         articleData.canonicalSlug || generateSlug(articleData.articleTitle || articleData.title),
       articleTitle: articleData.articleTitle || null,
       status: articleData.status || 'draft',
-      imageUrl: articleData.featuredImage || null,
+      imageUrl: articleData.featuredImage ? getRelativePath(articleData.featuredImage) : null, // Store relative path
       categories: {
         typeIds: articleData.categoryIds || [],
         devaIds: [],
@@ -72,6 +87,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           title: articleData.title,
           seoTitle: articleData.seoTitle || null,
           videoId: articleData.videoId || null,
+          imageUrl: articleData.imageUrl ? getRelativePath(articleData.imageUrl) : null, // Store relative path
           stotra: null,
           stotraMeaning: null,
           body: articleData.body,

@@ -5,6 +5,7 @@ import { appConfig } from './config/app';
 import { connectDB } from './config/database';
 import { apolloServer, createGraphQLMiddleware } from './graphql/server';
 import { errorHandler, notFoundHandler } from './middleware/error';
+import { StaticFileMiddleware } from './middleware/staticFiles';
 import articlesRoutes from './routes/articles';
 import commentsRoutes from './routes/comments';
 import healthRoutes from './routes/health';
@@ -54,12 +55,29 @@ class App {
     });
 
     // Request logging
-    this.app.use((req, _res, next) => {
+    this.app.use((_req, _res, next) => {
       next();
     });
   }
 
   private initializeRoutes(): void {
+    // Set up static file serving for images first
+    // StaticFileMiddleware.setupStaticFileServing(this.app);
+
+    // Simple static file serving for now
+    const path = require('path');
+    const express = require('express');
+    this.app.use('/images', express.static(path.join(process.cwd(), 'uploads/images')));
+
+    // Also serve from frontend public directory for development
+    if (appConfig.nodeEnv === 'development') {
+      const frontendPublicPath = require('path').join(process.cwd(), '../frontend/public');
+      this.app.use('/frontend-images', express.static(frontendPublicPath));
+    }
+
+    // Add health check for static files
+    this.app.get('/rest/media/health', StaticFileMiddleware.createHealthCheckEndpoint());
+
     // Root endpoint
     this.app.get('/', (_req, res) => {
       res.json({
@@ -75,6 +93,7 @@ class App {
             comments: '/rest/comments',
           },
           graphql: '/graphql',
+          staticImages: 'GET /images/:locale/:filename',
         },
       });
     });

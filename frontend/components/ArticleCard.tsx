@@ -2,10 +2,48 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Col } from 'react-bootstrap';
 
+// Utility function to get the best available image URL
+function getBestImage(
+  translationImageUrl?: string | null,
+  globalImageUrl?: string | null,
+  videoId?: string | null,
+  fallbackImage: string = '/images/default-content.jpg'
+): string {
+  // Convert relative path to full URL if needed
+  const getImageUrl = (imagePath: string | null | undefined): string | null => {
+    if (!imagePath) return null;
+
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+
+    if (imagePath.startsWith('/')) {
+      return imagePath; // Use relative path, browser will resolve
+    }
+
+    return imagePath;
+  };
+
+  // Priority 1: Translation-specific image
+  const translationImg = getImageUrl(translationImageUrl);
+  if (translationImg) return translationImg;
+
+  // Priority 2: Global image
+  const globalImg = getImageUrl(globalImageUrl);
+  if (globalImg) return globalImg;
+
+  // Priority 3: YouTube thumbnail
+  if (videoId) return `https://i.ytimg.com/vi/${videoId}/hq720.jpg`;
+
+  // Priority 4: Fallback
+  return fallbackImage;
+}
+
 interface ArticleTranslation {
   title: string;
   seoTitle: string;
   videoId?: string | null;
+  imageUrl?: string | null;
   body: string;
   summary?: string | null;
 }
@@ -46,6 +84,13 @@ export default function ArticleCard({
 
   if (!translation) return null;
 
+  // Get the best available image using priority logic
+  const tyImage = translation.videoId
+    ? `https://i.ytimg.com/vi/${translation.videoId}/hq720.jpg`
+    : null;
+
+  const articleImage = translation.imageUrl ? translation.imageUrl : tyImage;
+
   return (
     <Col sm="12" md="6" lg="6" xl="4" className="h5 mb-3">
       <Link
@@ -53,10 +98,11 @@ export default function ArticleCard({
         className="feature-widget focus-reset d-flex flex-column min-height-px-280 rounded-4 gr-hover-shadow-1 border bg-white text-center"
       >
         <div className="mb-auto">
-          {translation.videoId ? (
+          {/* Image display using priority logic: Translation imageUrl > Global imageUrl > YouTube thumbnail > Default */}
+          {articleImage ? (
             <Image
               className="img-fluid text-center"
-              src={`https://i.ytimg.com/vi/${translation.videoId}/hq720.jpg`}
+              src={articleImage}
               alt={translation.title}
               width={720}
               height={405}

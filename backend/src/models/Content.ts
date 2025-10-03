@@ -15,6 +15,7 @@ export interface ITranslation {
   seoTitle?: string | null;
   summary?: string | null; // Summary or brief description
   videoId?: string | null;
+  imageUrl?: string | null; // Language-specific image URL
 
   // Stotra-specific fields (used when contentType is 'stotra')
   stotra?: string | null;
@@ -140,9 +141,10 @@ const ContentSchema = new Schema<IContent>(
       validate: {
         validator: function (v: string | null) {
           if (!v) return true;
-          return /^https?:\/\/.+/.test(v);
+          // Accept both full URLs (http/https) and relative paths (starting with /)
+          return /^https?:\/\/.+/.test(v) || /^\/.*/.test(v);
         },
-        message: 'imageUrl must be a valid URL',
+        message: 'imageUrl must be a valid URL or relative path starting with /',
       },
     },
     status: {

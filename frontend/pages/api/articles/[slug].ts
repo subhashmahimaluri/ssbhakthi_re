@@ -4,6 +4,19 @@ import { authOptions } from '../auth/[...nextauth]';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:4000';
 
+// Utility function to extract relative path from full URL
+function getRelativePath(imageUrl: string): string {
+  if (!imageUrl) return '';
+
+  try {
+    const url = new URL(imageUrl);
+    return url.pathname;
+  } catch {
+    // If it's not a valid URL, assume it's already a relative path
+    return imageUrl;
+  }
+}
+
 // Helper function to generate slug from title
 function generateSlug(title: string): string {
   return title
@@ -86,12 +99,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         summary: translation?.summary || '',
         body: translation?.body || '',
         videoId: translation?.videoId || '',
+        imageUrl: translation?.imageUrl || '', // Language-specific image URL
         status: article.status,
         locale: locale,
         seoTitle: translation?.seoTitle || '',
         seoDescription: '',
         seoKeywords: '',
-        featuredImage: article.imageUrl || '',
+        featuredImage: article.imageUrl || '', // Global image URL
         categories: article.categories || { typeIds: [], devaIds: [], byNumberIds: [] },
         tags: [],
         publishedAt: article.createdAt,
@@ -137,7 +151,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         canonicalSlug: articleData.canonicalSlug || slug,
         articleTitle: articleData.articleTitle || null,
         status: articleData.status || 'draft',
-        imageUrl: articleData.featuredImage || null,
+        imageUrl: articleData.featuredImage ? getRelativePath(articleData.featuredImage) : null, // Store relative path
         categories: {
           typeIds: articleData.categoryIds || [],
           devaIds: [],
@@ -148,6 +162,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             title: articleData.title,
             seoTitle: articleData.seoTitle || null,
             videoId: articleData.videoId || null,
+            imageUrl: articleData.imageUrl ? getRelativePath(articleData.imageUrl) : null, // Store relative path
             stotra: null,
             stotraMeaning: null,
             body: articleData.body,

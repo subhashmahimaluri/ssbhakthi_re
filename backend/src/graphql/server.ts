@@ -1,5 +1,4 @@
 import { ApolloServer } from '@apollo/server';
-import { ApolloServer } from '@apollo/server';
 import express from 'express';
 import { readFileSync } from 'fs';
 import { GraphQLFormattedError } from 'graphql';

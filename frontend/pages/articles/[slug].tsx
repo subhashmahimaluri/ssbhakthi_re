@@ -14,6 +14,7 @@ interface ArticleTranslation {
   title: string;
   seoTitle: string;
   videoId?: string | null;
+  imageUrl?: string | null;
   body?: string | null;
 }
 
@@ -342,12 +343,30 @@ export default function ArticlePage() {
               </div>
             )}
 
-            {/* YouTube Video Embed (async load) */}
-            {translation.videoId && (
+            {/* Media Section - Video first preference, translation imageUrl second, global imageUrl third */}
+            {translation.videoId ? (
               <div className="mb-4">
                 <YouTubeEmbed videoId={translation.videoId} />
               </div>
-            )}
+            ) : translation.imageUrl ? (
+              <div className="mb-4">
+                <img
+                  src={translation.imageUrl}
+                  alt={translation.title}
+                  className="img-fluid rounded"
+                  style={{ maxWidth: '100%', height: 'auto' }}
+                />
+              </div>
+            ) : article.imageUrl ? (
+              <div className="mb-4">
+                <img
+                  src={article.imageUrl}
+                  alt={translation.title}
+                  className="img-fluid rounded"
+                  style={{ maxWidth: '100%', height: 'auto' }}
+                />
+              </div>
+            ) : null}
 
             {/* Article Body Content */}
             {translation.body && (
