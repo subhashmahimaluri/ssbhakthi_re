@@ -1,6 +1,7 @@
 // Import SCSS variables and mixins
 @import 'variables';
 @import 'mixins';
+@import 'languages';
 
 body {
   background: $gray-120;
@@ -403,7 +404,7 @@ body {
 .stotra-content {
   p {
     font-size: 1.2rem;
-    color: #2c3e50;
+    color: $black;
     margin-bottom: 1.5rem;
   }
 }
@@ -920,7 +921,7 @@ a {
   }
   & > li {
     & > .nav-link {
-      color: var(--color-texts) !important;
+      color: $black !important;
       font-size: 15px;
       font-weight: 700;
       @include desktops {
@@ -1185,9 +1186,7 @@ a {
 }
 
 .instance-te {
-  font-family:
-    Hind Guntur,
-    sans-serif;
+  font-family: $font-family-telugu;
   font-weight: 500;
   P {
     font-size: 1.1875rem;

@@ -1,7 +1,7 @@
 // styles/variables.scss - Global SCSS Variables
 // =====================================================
 // Language-specific variables
-$font-family-telugu: 'Noto Sans Telugu', 'Gautami', 'Raavi', sans-serif;
+$font-family-telugu: 'Mandali', 'Noto Serif Telugu', 'Gautami', 'Raavi', serif;
 $font-family-hindi: 'Noto Sans Devanagari', 'Mangal', 'Kokila', sans-serif;
 $font-family-kannada: 'Noto Sans Kannada', 'Tunga', 'Kedage', sans-serif;
 $font-family-english: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
@@ -91,7 +91,8 @@ $transition-slow: all 0.5s ease;
 
 $enable-responsive-font-sizes: true;
 $font-family-base: 'Circular Std', sans-serif;
-$font-family-telugu: 'Hind Guntur', sans-serif;
+$font-family-telugu:
+  'NATS', 'Noto Sans Telugu', 'Noto Serif Telugu', 'Gautami', 'Raavi', sans-serif;
 
 $headings-font-weight: 700;
 $headings-color: rgba(22, 28, 45, 0.4);

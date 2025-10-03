@@ -1,0 +1,84 @@
+// Language-specific styling
+@import 'variables';
+@import 'mixins';
+
+// Language classes for consistent font application
+.lang {
+  &-te {
+    @include language-font('te');
+    direction: ltr;
+    line-height: 1.7; // Better line height for Telugu script
+    letter-spacing: 0.02em;
+    color: $black !important;
+  }
+
+  &-hi {
+    @include language-font('hi');
+    direction: ltr;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+  }
+
+  &-kn {
+    @include language-font('kn');
+    direction: ltr;
+    line-height: 1.7;
+    letter-spacing: 0.02em;
+  }
+
+  &-en {
+    @include language-font('en');
+    direction: ltr;
+    line-height: 1.5;
+    letter-spacing: 0;
+  }
+}
+
+// Language attribute selectors for automatic font application
+[lang='te'] {
+  @include language-font('te');
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+}
+
+[lang='hi'] {
+  @include language-font('hi');
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+}
+
+[lang='kn'] {
+  @include language-font('kn');
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+}
+
+[lang='en'] {
+  @include language-font('en');
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+
+// Specific Telugu font styling for enhanced readability
+.telugu-content {
+  @include language-font('te');
+  line-height: 1.8;
+  letter-spacing: 0.03em;
+  font-weight: 400;
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @include language-font('te');
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  p {
+    margin-bottom: 1.2em;
+    line-height: 1.8;
+  }
+}

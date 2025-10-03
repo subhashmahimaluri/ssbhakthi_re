@@ -101,3 +101,16 @@ $screen-xxxl: 1600px;
     margin-bottom: calc((1 - #{$line-height}) * 0.5em);
   }
 }
+
+// Language-specific font mixins
+@mixin language-font($language) {
+  @if $language == 'te' {
+    font-family: $font-family-telugu;
+  } @else if $language == 'hi' {
+    font-family: $font-family-hindi;
+  } @else if $language == 'kn' {
+    font-family: $font-family-kannada;
+  } @else if $language == 'en' {
+    font-family: $font-family-english;
+  }
+}
