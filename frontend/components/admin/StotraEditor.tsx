@@ -1,7 +1,9 @@
 import CKEditor, { CKEditorRef } from '@/components/admin/CKEditor';
+import ImageGallery from '@/components/admin/ImageGallery';
+import ImageUploader, { UploadedImage } from '@/components/admin/ImageUploader';
 import { useRouter } from 'next/router';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Button, Card, Col, Form, Row, Spinner } from 'react-bootstrap';
+import { Alert, Button, Card, Col, Form, Row, Spinner, Tab, Tabs } from 'react-bootstrap';
 
 interface StotraEditorProps {
   stotraId?: string;
@@ -35,6 +37,12 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
+  // Image management state
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
+  const [showImageManager, setShowImageManager] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<UploadedImage | null>(null);
+  const [showImageActionModal, setShowImageActionModal] = useState(false);
+
   const [formData, setFormData] = useState({
     stotraTitle: '', // Common title for all translations
     canonicalSlug: '', // Common slug for all translations
@@ -42,6 +50,7 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
     stotra: { te: '', en: '', hi: '', kn: '' },
     stotraMeaning: { te: '', en: '', hi: '', kn: '' },
     videoId: { te: '', en: '', hi: '', kn: '' }, // YouTube video ID per language
+    imageUrl: { te: '', en: '', hi: '', kn: '' }, // Image URL per language
     status: 'draft' as 'draft' | 'published' | 'scheduled',
     scheduledAt: '',
     seoTitle: '',
@@ -112,6 +121,7 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
         stotra: { te: '', en: '', hi: '', kn: '' },
         stotraMeaning: { te: '', en: '', hi: '', kn: '' },
         videoId: { te: '', en: '', hi: '', kn: '' }, // YouTube video ID per language
+        imageUrl: { te: '', en: '', hi: '', kn: '' }, // Image URL per language
         status: stotra.status as 'draft' | 'published' | 'scheduled',
         scheduledAt: stotra.scheduledAt || '',
         seoTitle: stotra.seoTitle || '',
@@ -131,6 +141,8 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
       newFormData.stotraMeaning[currentLocale as keyof typeof newFormData.stotraMeaning] =
         stotra.stotraMeaning || '';
       newFormData.videoId[currentLocale as keyof typeof newFormData.videoId] = stotra.videoId || '';
+      newFormData.imageUrl[currentLocale as keyof typeof newFormData.imageUrl] =
+        stotra.imageUrl || '';
 
       setFormData(newFormData);
     } catch (error) {
@@ -199,6 +211,13 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
         ...prev,
         videoId: { ...prev.videoId, [currentLocale]: value },
       }));
+    } else if (field === 'imageUrl') {
+      // Clean the image URL before storing it
+      const cleanedUrl = cleanImageUrl(value);
+      setFormData(prev => ({
+        ...prev,
+        imageUrl: { ...prev.imageUrl, [currentLocale]: cleanedUrl },
+      }));
     } else {
       setFormData(prev => ({ ...prev, [field]: value }));
     }
@@ -216,6 +235,21 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
       ...prev,
       stotraMeaning: { ...prev.stotraMeaning, [currentLocale]: data },
     }));
+  };
+
+  // Helper function to clean image URLs - remove localhost prefix
+  const cleanImageUrl = (url: string): string => {
+    if (!url) return url;
+
+    // Remove localhost URLs (both http and https) - keep the leading slash
+    if (url.startsWith('http://localhost:3000')) {
+      return url.replace('http://localhost:3000', '');
+    }
+    if (url.startsWith('https://localhost:3000')) {
+      return url.replace('https://localhost:3000', '');
+    }
+
+    return url;
   };
 
   const validateForm = () => {
@@ -256,6 +290,9 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
         stotraMeaning:
           formData.stotraMeaning[currentLocale as keyof typeof formData.stotraMeaning] || null,
         videoId: formData.videoId[currentLocale as keyof typeof formData.videoId] || null,
+        imageUrl:
+          cleanImageUrl(formData.imageUrl[currentLocale as keyof typeof formData.imageUrl] || '') ||
+          undefined, // Optional stotra image
         status: formData.status,
         locale: currentLocale,
         scheduledAt: formData.scheduledAt || undefined,
@@ -319,6 +356,57 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
     } finally {
       setSaving(false);
     }
+  };
+
+  // Image management handlers
+  const handleImageUploaded = (image: UploadedImage) => {
+    setUploadedImages(prev => [image, ...prev]);
+  };
+
+  const handleImageUploadError = (error: string) => {
+    setErrors(prev => [error, ...prev]);
+  };
+
+  const handleImageSelect = (image: UploadedImage) => {
+    setSelectedImage(image);
+    setShowImageActionModal(true);
+  };
+
+  const handleImageAction = (action: 'featured' | 'content' | 'both') => {
+    if (!selectedImage) return;
+
+    if (action === 'featured' || action === 'both') {
+      // Set as stotra featured image - use WebP URL like ArticleEditor
+      const imageUrl =
+        selectedImage.urls?.webp || selectedImage.urls?.original || selectedImage.url;
+      setFormData(prev => ({
+        ...prev,
+        imageUrl: { ...prev.imageUrl, [currentLocale]: cleanImageUrl(imageUrl) },
+      }));
+    }
+
+    if (action === 'content' || action === 'both') {
+      // Insert into stotra content - use WebP URL like ArticleEditor
+      const currentData = formData.stotra[currentLocale as keyof typeof formData.stotra] || '';
+      const imageUrl =
+        selectedImage.urls?.webp || selectedImage.urls?.original || selectedImage.url;
+      const cleanedUrl = cleanImageUrl(imageUrl);
+      const imageHtml = `<img src="${cleanedUrl}" alt="${selectedImage.alt || selectedImage.originalName}" style="max-width: 100%; height: auto;" />`;
+      const newData = currentData + imageHtml;
+
+      setFormData(prev => ({
+        ...prev,
+        stotra: { ...prev.stotra, [currentLocale]: newData },
+      }));
+
+      // Also update the editor if it's available
+      if (stotraEditorRef.current) {
+        stotraEditorRef.current.setData(newData);
+      }
+    }
+
+    setShowImageActionModal(false);
+    setSelectedImage(null);
   };
 
   const handleSaveAsDraft = async () => {
@@ -453,7 +541,7 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
                   </Form.Text>
                 </Form.Group>
 
-                <Form.Group className="mb-0">
+                <Form.Group className="mb-3">
                   <Form.Label>YouTube Video ID ({currentLocale.toUpperCase()})</Form.Label>
                   <Form.Control
                     type="text"
@@ -464,6 +552,20 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
                   <Form.Text className="text-muted">
                     YouTube video ID from the URL (e.g., for
                     https://youtube.com/watch?v=dQw4w9WgXcQ, enter 'dQw4w9WgXcQ')
+                  </Form.Text>
+                </Form.Group>
+
+                <Form.Group className="mb-0">
+                  <Form.Label>Stotra Image URL (Optional)</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={formData.imageUrl[currentLocale as keyof typeof formData.imageUrl] || ''}
+                    onChange={e => handleFieldChange('imageUrl', e.target.value)}
+                    placeholder="Enter stotra image URL (e.g., /api/images/te/2025/10/image.jpg)"
+                  />
+                  <Form.Text className="text-muted">
+                    Optional image for the stotra. If provided, this image will be displayed when
+                    video is not available.
                   </Form.Text>
                 </Form.Group>
               </Card.Body>
@@ -794,9 +896,202 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
                 </Form.Group>
               </Card.Body>
             </Card>
+
+            {/* Image Management */}
+            <Card className="mb-3">
+              <Card.Header>
+                <h6 className="mb-0">
+                  <i className="bi bi-images me-2"></i>
+                  Image Management
+                </h6>
+              </Card.Header>
+              <Card.Body>
+                <Tabs defaultActiveKey="upload" className="mb-3">
+                  <Tab eventKey="upload" title="Upload">
+                    <ImageUploader
+                      locale={currentLocale}
+                      contentType="stotra"
+                      contentId={stotraId}
+                      onImageUploaded={handleImageUploaded}
+                      onImageUploadError={handleImageUploadError}
+                      multiple={true}
+                      maxFiles={10}
+                      showPreview={false}
+                      className="mb-3"
+                    />
+
+                    {/* Recently uploaded images */}
+                    {uploadedImages.length > 0 && (
+                      <div>
+                        <h6 className="small fw-bold mb-2">Recently Uploaded</h6>
+                        <div className="row g-2">
+                          {uploadedImages.slice(-4).map(image => (
+                            <div key={image.id} className="col-6">
+                              <div
+                                className="position-relative cursor-pointer"
+                                onClick={() => {
+                                  setSelectedImage(image);
+                                  setShowImageActionModal(true);
+                                }}
+                              >
+                                <img
+                                  src={image.urls?.thumbnail || image.urls?.original || image.url}
+                                  alt={image.alt || image.originalName}
+                                  className="img-fluid rounded"
+                                  style={{ height: '60px', width: '100%', objectFit: 'cover' }}
+                                />
+                                <div className="position-absolute bg-dark rounded-bottom bottom-0 end-0 start-0 bg-opacity-75 p-1 text-white">
+                                  <small className="small text-truncate d-block">
+                                    {image.originalName}
+                                  </small>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </Tab>
+
+                  <Tab eventKey="gallery" title="Gallery">
+                    <div className="text-center">
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => setShowImageManager(true)}
+                      >
+                        <i className="bi bi-images me-1"></i>
+                        Browse Image Gallery
+                      </Button>
+                    </div>
+                  </Tab>
+                </Tabs>
+              </Card.Body>
+            </Card>
           </Col>
         </Row>
       </Form>
+
+      {/* Image Gallery Modal */}
+      {showImageManager && (
+        <div
+          className="modal fade show d-block"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          onClick={() => setShowImageManager(false)}
+        >
+          <div className="modal-dialog modal-xl" onClick={e => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  <i className="bi bi-images me-2"></i>
+                  Image Gallery - {currentLocale.toUpperCase()}
+                </h5>
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  onClick={() => setShowImageManager(false)}
+                >
+                  <i className="bi bi-x-lg"></i>
+                </Button>
+              </div>
+              <div className="modal-body">
+                <ImageGallery
+                  locale={currentLocale}
+                  contentType="stotra"
+                  contentId={stotraId}
+                  onImageSelect={handleImageSelect}
+                  selectable={true}
+                  showEditOptions={false}
+                />
+              </div>
+              <div className="modal-footer">
+                <Button variant="secondary" onClick={() => setShowImageManager(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Action Modal */}
+      {showImageActionModal && selectedImage && (
+        <div
+          className="modal fade show d-block"
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          onClick={() => setShowImageActionModal(false)}
+        >
+          <div className="modal-dialog modal-md" onClick={e => e.stopPropagation()}>
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  <i className="bi bi-image me-2"></i>
+                  What would you like to do with this image?
+                </h5>
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  onClick={() => setShowImageActionModal(false)}
+                >
+                  <i className="bi bi-x-lg"></i>
+                </Button>
+              </div>
+              <div className="modal-body">
+                <div className="row">
+                  <div className="col-4">
+                    <img
+                      src={
+                        selectedImage.urls?.thumbnail ||
+                        selectedImage.urls?.original ||
+                        selectedImage.url
+                      }
+                      alt={selectedImage.alt || selectedImage.originalName}
+                      className="img-fluid rounded"
+                      style={{ width: '100%', objectFit: 'cover' }}
+                    />
+                  </div>
+                  <div className="col-8">
+                    <h6 className="fw-bold">{selectedImage.originalName}</h6>
+                    {selectedImage.dimensions && (
+                      <p className="text-muted small mb-1">
+                        {selectedImage.dimensions.width} × {selectedImage.dimensions.height}
+                      </p>
+                    )}
+                    <p className="text-muted small mb-3">
+                      {(selectedImage.size / 1024).toFixed(1)} KB
+                    </p>
+
+                    <div className="d-grid gap-2">
+                      <Button variant="primary" onClick={() => handleImageAction('featured')}>
+                        <i className="bi bi-image me-2"></i>
+                        Set as Stotra Image
+                      </Button>
+
+                      <Button
+                        variant="outline-primary"
+                        onClick={() => handleImageAction('content')}
+                      >
+                        <i className="bi bi-file-earmark-text me-2"></i>
+                        Insert into Content
+                      </Button>
+
+                      <Button variant="success" onClick={() => handleImageAction('both')}>
+                        <i className="bi bi-collection me-2"></i>
+                        Both (Set as Image + Insert)
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <Button variant="secondary" onClick={() => setShowImageActionModal(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

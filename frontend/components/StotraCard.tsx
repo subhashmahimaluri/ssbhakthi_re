@@ -7,6 +7,7 @@ interface StotraTranslation {
   seoTitle: string;
   videoId?: string | null;
   stotra: string;
+  imageUrl?: string | null;
   stotraMeaning: string;
   body?: string | null;
 }
@@ -69,6 +70,13 @@ export default function StotraCard({
     return `/stotras/${stotra.canonicalSlug}`;
   };
 
+  // Get the best available image using priority logic
+  const tyImage = translation.videoId
+    ? `https://i.ytimg.com/vi/${translation.videoId}/hq720.jpg`
+    : null;
+
+  const stotraImage = translation.imageUrl ? translation.imageUrl : tyImage;
+
   return (
     <Col sm="12" md="6" lg="6" xl="4" className="h5 mb-3">
       <Link
@@ -76,10 +84,10 @@ export default function StotraCard({
         className="feature-widget focus-reset d-flex flex-column min-height-px-280 rounded-4 gr-hover-shadow-1 border bg-white text-center"
       >
         <div className="mb-auto">
-          {translation.videoId ? (
+          {stotraImage ? (
             <Image
               className="img-fluid text-center"
-              src={`https://i.ytimg.com/vi/${translation.videoId}/hq720.jpg`}
+              src={stotraImage}
               alt={translation.title}
               width={720}
               height={405}

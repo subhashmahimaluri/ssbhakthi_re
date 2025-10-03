@@ -9,13 +9,14 @@ interface StotraData {
   stotra: string;
   stotraMeaning?: string;
   videoId?: string;
+  imageUrl?: string; // Translation-level image URL
   status: 'draft' | 'published' | 'scheduled';
   locale: string;
   scheduledAt?: string;
   seoTitle?: string;
   seoDescription?: string;
   seoKeywords?: string;
-  featuredImage?: string;
+  featuredImage?: string; // Main content level image (deprecated, use imageUrl instead)
   categoryIds?: string[];
   devaIds?: string[];
   byNumberIds?: string[];
@@ -52,7 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         contentType: stotraData.contentType,
         stotraTitle: stotraData.stotraTitle,
         status: stotraData.status,
-        imageUrl: stotraData.imageUrl,
+        imageUrl: stotraData.translations[locale as string]?.imageUrl || stotraData.imageUrl, // Prioritize translation-level imageUrl
         categories: stotraData.categories,
         // Extract the current language translation
         title: stotraData.translations[locale as string]?.title || '',
@@ -120,7 +121,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         canonicalSlug: stotraData.canonicalSlug || slug, // Use provided canonicalSlug or fallback to slug param
         stotraTitle: stotraData.stotraTitle || null,
         status: stotraData.status || 'draft',
-        imageUrl: stotraData.featuredImage || null,
+        imageUrl: stotraData.featuredImage || null, // Keep backwards compatibility
         categories: {
           typeIds: stotraData.categoryIds || [],
           devaIds: stotraData.devaIds || [],
@@ -131,6 +132,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             title: stotraData.title,
             seoTitle: stotraData.seoTitle || null,
             videoId: stotraData.videoId || null,
+            imageUrl: stotraData.imageUrl || null, // Translation-level image URL
             stotra: stotraData.stotra,
             stotraMeaning: stotraData.stotraMeaning || null,
             body: null, // Stotras don't use body field

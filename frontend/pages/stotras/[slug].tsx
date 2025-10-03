@@ -17,6 +17,7 @@ interface StotraTranslation {
   seoTitle: string;
   videoId?: string | null;
   stotra: string;
+  imageUrl?: string | null;
   stotraMeaning: string;
   body?: string | null;
 }
@@ -418,12 +419,20 @@ export default function StotraPage() {
               </div>
             )}
 
-            {/* YouTube Video Embed (async load) */}
-            {translation.videoId && (
+            {translation.videoId ? (
               <div className="mb-4">
                 <YouTubeEmbed videoId={translation.videoId} />
               </div>
-            )}
+            ) : translation.imageUrl ? (
+              <div className="mb-4">
+                <img
+                  src={translation.imageUrl}
+                  alt={translation.title}
+                  className="img-fluid rounded"
+                  style={{ maxWidth: '100%', height: 'auto' }}
+                />
+              </div>
+            ) : null}
 
             {/* Stotra Content */}
             {translation.stotra && (

@@ -9,13 +9,14 @@ interface StotraData {
   stotra: string;
   stotraMeaning?: string;
   videoId?: string;
+  imageUrl?: string; // Translation-level image URL
   status: 'draft' | 'published' | 'scheduled';
   locale: string;
   scheduledAt?: string;
   seoTitle?: string;
   seoDescription?: string;
   seoKeywords?: string;
-  featuredImage?: string;
+  featuredImage?: string; // Main content level image (deprecated, use imageUrl instead)
   categoryIds?: string[];
   devaIds?: string[];
   byNumberIds?: string[];
@@ -99,7 +100,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       canonicalSlug,
       stotraTitle: stotraData.stotraTitle || null,
       status: stotraData.status || 'draft',
-      imageUrl: stotraData.featuredImage || null,
+      imageUrl: stotraData.featuredImage || null, // Keep backwards compatibility
       categories: {
         typeIds: convertToObjectIds(stotraData.categoryIds),
         devaIds: convertToObjectIds(stotraData.devaIds),
@@ -110,6 +111,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           title: stotraData.title,
           seoTitle: stotraData.seoTitle || null,
           videoId: stotraData.videoId || null,
+          imageUrl: stotraData.imageUrl || null, // Translation-level image URL
           stotra: stotraData.stotra,
           stotraMeaning: stotraData.stotraMeaning || null,
           body: null, // Stotras don't use body field

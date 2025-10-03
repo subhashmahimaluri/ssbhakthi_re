@@ -357,15 +357,6 @@ export default function ArticlePage() {
                   style={{ maxWidth: '100%', height: 'auto' }}
                 />
               </div>
-            ) : article.imageUrl ? (
-              <div className="mb-4">
-                <img
-                  src={article.imageUrl}
-                  alt={translation.title}
-                  className="img-fluid rounded"
-                  style={{ maxWidth: '100%', height: 'auto' }}
-                />
-              </div>
             ) : null}
 
             {/* Article Body Content */}
