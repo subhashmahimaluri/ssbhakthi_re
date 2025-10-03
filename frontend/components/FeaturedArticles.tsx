@@ -10,6 +10,7 @@ interface ArticleTranslation {
   videoId?: string | null;
   body: string;
   summary?: string | null;
+  imageUrl?: string | null;
 }
 
 interface Article {
@@ -138,6 +139,12 @@ const FeaturedArticles: React.FC<FeaturedArticlesProps> = ({ showItems = 4 }) =>
 
               if (!translation) return null;
 
+              const tyImage = translation.videoId
+                ? `https://i.ytimg.com/vi/${translation.videoId}/hq720.jpg`
+                : null;
+
+              const articleImage = translation.imageUrl ? translation.imageUrl : tyImage;
+
               return (
                 <Col xs={12} sm={6} md={4} lg={3} key={article.canonicalSlug || index}>
                   <Link
@@ -145,22 +152,19 @@ const FeaturedArticles: React.FC<FeaturedArticlesProps> = ({ showItems = 4 }) =>
                     className="feature-widget focus-reset d-flex flex-column min-height-px-350 gr-hover-shadow-1 h-100 border bg-white p-3 text-center"
                   >
                     <div className="mb-auto">
-                      {translation.videoId ? (
+                      {articleImage ? (
                         <Image
                           className="img-fluid text-center"
-                          src={`https://i.ytimg.com/vi/${translation.videoId}/hq720.jpg`}
+                          src={articleImage}
                           alt={translation.title}
                           width={320}
                           height={180}
                           style={{ objectFit: 'cover' }}
                         />
                       ) : (
-                        <div
-                          className="video-placeholder d-flex align-items-center justify-content-center position-relative bg-light"
-                          style={{ height: '180px' }}
-                        >
+                        <div className="video-placeholder d-flex align-items-center justify-content-center position-relative">
                           <div className="video-title-overlay position-absolute end-0 start-0 p-3">
-                            <span className="fw-bold text-dark">{translation.title}</span>
+                            <span className="fw-bold text-white">{translation.title}</span>
                           </div>
                         </div>
                       )}

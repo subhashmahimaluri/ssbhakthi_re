@@ -76,7 +76,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         articleData.canonicalSlug || generateSlug(articleData.articleTitle || articleData.title),
       articleTitle: articleData.articleTitle || null,
       status: articleData.status || 'draft',
-      imageUrl: articleData.featuredImage ? getRelativePath(articleData.featuredImage) : null, // Store relative path
+      imageUrl: articleData.imageUrl ? getRelativePath(articleData.imageUrl) : null, // Store relative path from imageUrl, not featuredImage
       categories: {
         typeIds: articleData.categoryIds || [],
         devaIds: [],
@@ -88,12 +88,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           seoTitle: articleData.seoTitle || null,
           videoId: articleData.videoId || null,
           imageUrl: articleData.imageUrl ? getRelativePath(articleData.imageUrl) : null, // Store relative path
-          stotra: null,
-          stotraMeaning: null,
+          stotra: null, // Required for schema validation
+          stotraMeaning: null, // Required for schema validation
           body: articleData.body,
           summary: articleData.summary || null,
         },
       },
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
 
     const response = await fetch(`${BACKEND_URL}/rest/articles`, {
