@@ -16,6 +16,11 @@ import { Badge, Button, Collapse } from 'react-bootstrap';
 import imgSprite from '../assets/images/icons/panchangam_sprite.png';
 import { abhijitMuhurth, brahmaMuhurtham, getRahuKalam, pradoshaTime } from '../lib/goodBadTime';
 import { YexaaPanchang } from '../lib/panchangam';
+import {
+  calculateDailyVarjyam,
+  formatVarjyamTime,
+  getAllNakshatraPeriods,
+} from '../lib/panchangam/varjyamCalculations';
 import AutoComplete from './AutoComplete';
 import PanchangSlide from './PanchangSlide';
 
@@ -682,6 +687,65 @@ export default function PanchangamTable({ date, showViewMore = false }: Panchang
                             <span className="fw-bold">{t.panchangam.yamaganda}</span> :{' '}
                             {rahuKalamTimes.yamaganda}
                           </li>
+                          {/* Varjyam calculation and display */}
+                          {(() => {
+                            try {
+                              // Get all nakshatra periods that overlap with the calendar date
+                              const panchang = new YexaaPanchang();
+                              const allNakshatraPeriods = getAllNakshatraPeriods(
+                                panchangamDate,
+                                lat,
+                                lng,
+                                panchang
+                              );
+
+                              if (allNakshatraPeriods.length > 0) {
+                                // Calculate Varjyam for all overlapping nakshatra periods
+                                const dailyVarjyamResults = calculateDailyVarjyam(
+                                  allNakshatraPeriods,
+                                  panchangamDate
+                                );
+
+                                if (dailyVarjyamResults.length > 0) {
+                                  // Flatten all periods and sort by start time
+                                  const allVarjyamPeriods = dailyVarjyamResults
+                                    .flatMap(result => result.periods)
+                                    .sort((a, b) => a.start.getTime() - b.start.getTime());
+                                  
+                                  // Further deduplicate at display level by checking timing similarity
+                                  const uniquePeriods = allVarjyamPeriods.filter((period, index, array) => {
+                                    // Keep first occurrence and only different timings
+                                    return index === 0 || 
+                                      Math.abs(period.start.getTime() - array[index - 1].start.getTime()) > 60000 || // More than 1 minute difference
+                                      Math.abs(period.end.getTime() - array[index - 1].end.getTime()) > 60000;
+                                  });
+                                  
+                                  return uniquePeriods.map((period, index) => (
+                                    <li key={`varjyam-${index}`}>
+                                      <span className="fw-bold">{t.panchangam.varjyam}</span>
+                                      {period.nakshatraName && (
+                                        <span className="text-muted ms-1">({period.nakshatraName})</span>
+                                      )} :{' '}
+                                      {formatVarjyamTime(period)}
+                                    </li>
+                                  ));
+                                }
+                              }
+
+                              return (
+                                <li>
+                                  <span className="fw-bold">{t.panchangam.varjyam}</span> : N/A
+                                </li>
+                              );
+                            } catch (error) {
+                              console.warn('Varjyam calculation error:', error);
+                              return (
+                                <li>
+                                  <span className="fw-bold">{t.panchangam.varjyam}</span> : N/A
+                                </li>
+                              );
+                            }
+                          })()}
                         </>
                       );
                     } catch (error) {
@@ -695,6 +759,9 @@ export default function PanchangamTable({ date, showViewMore = false }: Panchang
                           </li>
                           <li>
                             <span className="fw-bold">{t.panchangam.yamaganda}</span> : N/A
+                          </li>
+                          <li>
+                            <span className="fw-bold">{t.panchangam.varjyam}</span> : N/A
                           </li>
                         </>
                       );

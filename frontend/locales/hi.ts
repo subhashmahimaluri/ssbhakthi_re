@@ -31,6 +31,7 @@ export const hi = {
     rahu: 'Rahu',
     yamaganda: 'Yamaganda',
     gulika: 'Gulika',
+    varjyam: 'Varjyam',
     dur_muhurat: 'Dur Muhurat',
 
     auspicious_period: 'Auspicious Period',

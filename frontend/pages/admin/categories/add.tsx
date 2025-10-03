@@ -1,8 +1,7 @@
 import Layout from '@/components/Layout/Layout';
 import AdminNav from '@/components/admin/AdminNav';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { getAuthSession } from '@/lib/auth-dev';
 import { GetServerSideProps } from 'next';
-import { getServerSession } from 'next-auth';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
 import { Alert, Button, Card, Col, Container, Form, Row, Spinner } from 'react-bootstrap';
@@ -159,12 +158,10 @@ export default function AddCategoryPage({ userRoles }: AddCategoryPageProps) {
       }
 
       const result = await response.json();
-      console.log('✅ Category created successfully:', result.category);
 
       // Redirect to categories list
       router.push('/admin/categories');
     } catch (error) {
-      console.error('❌ Error creating category:', error);
       setErrors([error instanceof Error ? error.message : 'Failed to create category']);
     } finally {
       setSaving(false);
@@ -468,7 +465,7 @@ export default function AddCategoryPage({ userRoles }: AddCategoryPageProps) {
 }
 
 export const getServerSideProps: GetServerSideProps = async context => {
-  const session = await getServerSession(context.req, context.res, authOptions);
+  const session = await getAuthSession(context.req, context.res);
 
   if (!session) {
     return {

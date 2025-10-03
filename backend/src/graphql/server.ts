@@ -1,4 +1,5 @@
 import { ApolloServer } from '@apollo/server';
+import { ApolloServer } from '@apollo/server';
 import express from 'express';
 import { readFileSync } from 'fs';
 import { GraphQLFormattedError } from 'graphql';
@@ -39,8 +40,20 @@ export const apolloServer = new ApolloServer<GraphQLContext>({
 
 // Context factory
 export const createContext = async ({ req }: { req: any }): Promise<GraphQLContext> => {
-  const user = req.user;
+  let user = req.user;
   const dataloaders = createDataLoaders();
+
+  // Development bypass - provide a fake user if none exists
+  if (!user && isDevelopment()) {
+    console.log('🚀 [GraphQL Context] Using development bypass for authentication');
+    user = {
+      sub: 'dev-user-123',
+      email: 'dev@example.com',
+      preferred_username: 'developer',
+      name: 'Development User',
+      roles: ['admin', 'editor', 'author'],
+    };
+  }
 
   return {
     req,

@@ -8,7 +8,7 @@ export const menuItems = [
     name: 'Stotra',
     items: [
       {
-        href: 'all-stotras-namavali',
+        href: '/all-stotras-namavali',
         name: 'All Stotras & Namavali',
       },
       {

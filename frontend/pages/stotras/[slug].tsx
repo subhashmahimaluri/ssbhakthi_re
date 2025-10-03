@@ -437,7 +437,7 @@ export default function StotraPage() {
 
             {/* Stotra Meaning */}
             {translation.stotraMeaning && (
-              <div className="mb-4">
+              <div className="mb-4 pt-5">
                 <h2 className="h4 text-secondary mb-3">{t.stotra.stotra_meaning}</h2>
                 <div
                   className="stotra-meaning"

@@ -25,3 +25,14 @@ export interface MoonTime {
   rise?: Date;
   set?: Date;
 }
+
+export interface VarjyamTiming {
+  start: Date;
+  end: Date;
+  nakshatraName: string;
+}
+
+export interface VarjyamData {
+  periods: VarjyamTiming[];
+  totalDuration: number; // in minutes
+}

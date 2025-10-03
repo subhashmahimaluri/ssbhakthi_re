@@ -1,8 +1,7 @@
 import Layout from '@/components/Layout/Layout';
 import AdminNav from '@/components/admin/AdminNav';
-import { authOptions } from '@/pages/api/auth/[...nextauth]';
+import { getAuthSession } from '@/lib/auth-dev';
 import { GetServerSideProps } from 'next';
-import { getServerSession } from 'next-auth';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Button, Card, Col, Container, Row } from 'react-bootstrap';
@@ -144,7 +143,7 @@ export default function AdminDashboard({ userRoles }: AdminDashboardProps) {
 }
 
 export const getServerSideProps: GetServerSideProps = async context => {
-  const session = await getServerSession(context.req, context.res, authOptions);
+  const session = await getAuthSession(context.req, context.res);
 
   if (!session) {
     return {

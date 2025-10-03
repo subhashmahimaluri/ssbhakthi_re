@@ -1,0 +1,35 @@
+{
+  "nakshatraFractions": {
+    "ashwini": 0.8333333333333334,
+    "bharani": 0.4,
+    "krithika": 0.5,
+    "rohini": 0.6666666666666666,
+    "mrigashirsha": 0.23333333333333334,
+    "ardra": 0.35,
+    "punarvasu": 0.5,
+    "pushya": 0.3333333333333333,
+    "ashlesha": 0.5333333333333333,
+    "makha": 0.5,
+    "purva_phalguni": 0.3333333333333333,
+    "uttara_phalguni": 0.3,
+    "hasta": 0.35,
+    "chitra": 0.5,
+    "swati": 0.4666666666666667,
+    "vishaka": 0.6,
+    "anuradha": 0.5,
+    "jyeshta": 0.3333333333333333,
+    "moola": 0.4,
+    "purva_ashadha": 0.4666666666666667,
+    "uttara_ashadha": 0.3333333333333333,
+    "shravana": 0.35,
+    "dhanishta": 0.5,
+    "shatabhisha": 0.8,
+    "purva_bhadrapada": 0.75,
+    "uttara_bhadrapada": 0.5833333333333334,
+    "revati": 0.75
+  },
+  "constants": {
+    "varjyamDurationBase": 96,
+    "nakshatraDurationBase": 1440
+  }
+}
