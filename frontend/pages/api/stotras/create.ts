@@ -88,8 +88,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         '-' +
         Date.now();
 
-    // Helper function to convert string IDs to ObjectIds for MongoDB
-    const convertToObjectIds = (ids: string[] | undefined): string[] => {
+    // Helper function to validate and filter category IDs (backend will handle ObjectId conversion)
+    const validateCategoryIds = (ids: string[] | undefined): string[] => {
       if (!ids || !Array.isArray(ids)) return [];
       return ids.filter(id => typeof id === 'string' && id.length === 24); // Basic ObjectId validation
     };
@@ -102,9 +102,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       status: stotraData.status || 'draft',
       imageUrl: stotraData.featuredImage || null, // Keep backwards compatibility
       categories: {
-        typeIds: convertToObjectIds(stotraData.categoryIds),
-        devaIds: convertToObjectIds(stotraData.devaIds),
-        byNumberIds: convertToObjectIds(stotraData.byNumberIds),
+        typeIds: validateCategoryIds(stotraData.categoryIds),
+        devaIds: validateCategoryIds(stotraData.devaIds),
+        byNumberIds: validateCategoryIds(stotraData.byNumberIds),
       },
       translations: {
         [stotraData.locale]: {
