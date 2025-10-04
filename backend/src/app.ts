@@ -102,6 +102,7 @@ class App {
     this.app.use('/rest/health', healthRoutes);
     this.app.use('/rest/media', mediaRoutes);
     this.app.use('/rest/stotras', stotrasRoutes);
+
     this.app.use('/rest/articles', articlesRoutes);
     this.app.use('/rest/comments', commentsRoutes);
 

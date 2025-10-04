@@ -62,7 +62,7 @@ export default function Sahasranamam() {
         setLoadingMore(true);
       }
 
-      const apiUrl = `http://localhost:4000/rest/stotras?lang=${locale}&page=${page}&limit=${ITEMS_PER_PAGE}&categoryId=${SAHASRANAMA_CATEGORY_ID}`;
+      const apiUrl = `/api/stotras?lang=${locale}&page=${page}&limit=${ITEMS_PER_PAGE}&categoryId=${SAHASRANAMA_CATEGORY_ID}`;
       console.log('Fetching stotras from:', apiUrl);
 
       const response = await fetch(apiUrl);

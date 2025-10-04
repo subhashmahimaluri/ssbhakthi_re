@@ -17,6 +17,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.query.offset) queryParams.set('offset', req.query.offset as string);
     if (req.query.status) queryParams.set('status', req.query.status as string);
     if (req.query.search) queryParams.set('search', req.query.search as string);
+    if (req.query.categoryId) queryParams.set('categoryId', req.query.categoryId as string);
+    if (req.query.page) queryParams.set('page', req.query.page as string);
 
     const url = `${backendUrl}/rest/stotras?${queryParams.toString()}`;
 

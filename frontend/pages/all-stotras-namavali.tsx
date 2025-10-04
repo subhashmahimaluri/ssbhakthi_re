@@ -47,40 +47,25 @@ const getCategoryContext = (
   stotra: any
 ): 'ashtothram' | 'sahasranamavali' | 'sahasranamam' | 'default' => {
   // First try to detect based on categories if available
-  if (stotra.categories && Array.isArray(stotra.categories)) {
-    for (const category of stotra.categories) {
-      const categoryName = category.name?.toLowerCase() || '';
-      const categorySlug = category.slug?.toLowerCase() || '';
-      const categoryId = category._id || '';
+  if (stotra.categories) {
+    const { typeIds = [], devaIds = [], byNumberIds = [] } = stotra.categories;
 
-      // Check for Ashtottara Shatanamavali category
-      if (
-        categoryName.includes('ashtottara') ||
-        categoryName.includes('ashtothram') ||
-        categorySlug.includes('ashtottara') ||
-        categorySlug.includes('ashtothram') ||
-        categoryId === '68ac2239bfcc70ec4468aa8a'
-      ) {
-        return 'ashtothram';
-      }
+    // Check all category ID arrays for specific category IDs
+    const allCategoryIds = [...typeIds, ...devaIds, ...byNumberIds];
 
-      // Check for Sahasranamavali category
-      if (
-        categoryName.includes('sahasranamavali') ||
-        categorySlug.includes('sahasranamavali') ||
-        categoryId === '68ac2239bfcc70ec4468aa8f'
-      ) {
-        return 'sahasranamavali';
-      }
+    // Check for Ashtottara Shatanamavali category
+    if (allCategoryIds.includes('68ac2239bfcc70ec4468aa8c')) {
+      return 'ashtothram';
+    }
 
-      // Check for Sahasranamam category
-      if (
-        categoryName.includes('sahasranamam') ||
-        categorySlug.includes('sahasranamam') ||
-        categoryId === '68dce4a832e525e497f29abc'
-      ) {
-        return 'sahasranamam';
-      }
+    // Check for Sahasranamavali category
+    if (allCategoryIds.includes('68ac2239bfcc70ec4468aa8f')) {
+      return 'sahasranamavali';
+    }
+
+    // Check for Sahasranamam category
+    if (allCategoryIds.includes('68dce4a832e525e497f29abc')) {
+      return 'sahasranamam';
     }
   }
 

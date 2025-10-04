@@ -215,6 +215,72 @@ export default function AdminStotrasPage({ userRoles }: AdminStotrasPageProps) {
     });
   };
 
+  // Function to determine the correct route based on category context
+  const getCategoryContext = (
+    stotra: Stotra
+  ): 'ashtothram' | 'sahasranamavali' | 'sahasranamam' | 'default' => {
+    // First try to detect based on categories if available
+    if (stotra.categories) {
+      const { typeIds = [], devaIds = [], byNumberIds = [] } = stotra.categories;
+
+      // Check all category ID arrays for specific category IDs
+      const allCategoryIds = [...typeIds, ...devaIds, ...byNumberIds];
+
+      // Check for Ashtottara Shatanamavali category
+      if (allCategoryIds.includes('68ac2239bfcc70ec4468aa8c')) {
+        return 'ashtothram';
+      }
+
+      // Check for Sahasranamavali category
+      if (allCategoryIds.includes('68ac2239bfcc70ec4468aa8f')) {
+        return 'sahasranamavali';
+      }
+
+      // Check for Sahasranamam category
+      if (allCategoryIds.includes('68dce4a832e525e497f29abc')) {
+        return 'sahasranamam';
+      }
+    }
+
+    // Fallback: check titles for category context
+    const translation =
+      stotra.translations[filters.locale] || Object.values(stotra.translations)[0];
+
+    if (translation?.title) {
+      const title = translation.title.toLowerCase();
+
+      if (title.includes('ashtottara') || title.includes('ashtothram')) {
+        return 'ashtothram';
+      }
+
+      if (title.includes('sahasranamavali')) {
+        return 'sahasranamavali';
+      }
+
+      if (title.includes('sahasranamam') || title.includes('sahasranama')) {
+        return 'sahasranamam';
+      }
+    }
+
+    return 'default';
+  };
+
+  // Function to get the correct route path for a stotra
+  const getStotraRoute = (stotra: Stotra): string => {
+    const categoryContext = getCategoryContext(stotra);
+
+    switch (categoryContext) {
+      case 'ashtothram':
+        return `/ashtothram/${stotra.canonicalSlug}`;
+      case 'sahasranamavali':
+        return `/sahasranamavali/${stotra.canonicalSlug}`;
+      case 'sahasranamam':
+        return `/sahasranamam/${stotra.canonicalSlug}`;
+      default:
+        return `/stotras/${stotra.canonicalSlug}`;
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -373,7 +439,7 @@ export default function AdminStotrasPage({ userRoles }: AdminStotrasPageProps) {
                         </td>
                         <td>
                           <div className="d-flex gap-1">
-                            <Link href={`/stotras/${stotra.canonicalSlug}`}>
+                            <Link href={getStotraRoute(stotra)}>
                               <Button variant="outline-primary" size="sm">
                                 <i className="bi bi-eye me-1"></i>
                                 View

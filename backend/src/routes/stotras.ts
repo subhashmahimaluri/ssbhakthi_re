@@ -14,8 +14,6 @@ function getLanguageCode(lang: string): LanguageCode {
 // GET /rest/stotras - List all stotras
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    console.log('📋 Stotras API called with query:', req.query);
-
     const { lang = 'en', limit = '50', offset = '0', status, categoryId, page } = req.query;
 
     const languageCode = getLanguageCode(lang as string);
@@ -30,15 +28,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       offsetNum = Math.max(parseInt(offset as string) || 0, 0);
     }
 
-    console.log('🔍 Query parameters:', {
-      languageCode,
-      limitNum,
-      offsetNum,
-      status,
-      categoryId,
-      page,
-    });
-
     // Build query
     const query: any = {
       contentType: 'stotra',
@@ -51,7 +40,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 
       if (!isAdminRequest) {
         query.status = 'published';
-        console.log('🔒 Public access: filtering to published stotras only');
       }
     } else if (status !== 'all') {
       query.status = status;
@@ -63,27 +51,23 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     // Add category filter if provided
     if (categoryId && typeof categoryId === 'string') {
       // Support filtering by any of the category types
+      // Note: category IDs can be stored as either strings or ObjectIds
+      const categoryObjectId = new mongoose.Types.ObjectId(categoryId);
       query.$or = [
-        { 'categories.typeIds': new mongoose.Types.ObjectId(categoryId) },
-        { 'categories.devaIds': new mongoose.Types.ObjectId(categoryId) },
-        { 'categories.byNumberIds': new mongoose.Types.ObjectId(categoryId) },
+        { 'categories.typeIds': categoryId }, // String format
+        { 'categories.typeIds': categoryObjectId }, // ObjectId format
+        { 'categories.devaIds': categoryId }, // String format
+        { 'categories.devaIds': categoryObjectId }, // ObjectId format
+        { 'categories.byNumberIds': categoryId }, // String format
+        { 'categories.byNumberIds': categoryObjectId }, // ObjectId format
       ];
-      console.log('🏷️ Category filter applied:', categoryId);
     }
-
-    console.log('🔎 MongoDB query:', JSON.stringify(query, null, 2));
 
     // Execute query with pagination
     const [stotras, total] = await Promise.all([
       Content.find(query).sort({ updatedAt: -1 }).skip(offsetNum).limit(limitNum).lean(),
       Content.countDocuments(query),
     ]);
-
-    console.log('📊 Query results:', { foundStotras: stotras.length, total });
-    console.log(
-      '📄 Sample stotra:',
-      stotras[0] ? JSON.stringify(stotras[0], null, 2) : 'No stotras found'
-    );
 
     // Transform response to include only requested language translation
     const transformedStotras = stotras.map(stotra => ({
@@ -92,6 +76,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       stotraTitle: stotra.stotraTitle,
       status: stotra.status,
       imageUrl: stotra.imageUrl,
+      categories: stotra.categories,
       translations: {
         [languageCode]: stotra.translations[languageCode],
       },
