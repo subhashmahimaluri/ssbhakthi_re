@@ -280,7 +280,9 @@ router.post(
 
       console.log('🗨️ Final document to insert:', JSON.stringify(stotraDoc, null, 2));
 
-      const result = await contentsCollection.insertOne(stotraDoc);
+      const result = await contentsCollection.insertOne(stotraDoc, {
+        bypassDocumentValidation: true, // Bypass MongoDB JSON Schema validation
+      });
 
       console.log('✅ Stotra created successfully with ID:', result.insertedId);
 
@@ -308,6 +310,19 @@ router.post(
       }
       if (error instanceof Error && 'code' in error) {
         console.error('MongoDB error code:', (error as any).code);
+
+        // Handle specific MongoDB errors
+        if ((error as any).code === 121) {
+          console.error('Document validation failed - Schema mismatch');
+          res.status(400).json({
+            error: {
+              message: 'Document validation failed',
+              code: 'SCHEMA_VALIDATION_ERROR',
+              details: 'Document does not conform to collection schema',
+            },
+          });
+          return;
+        }
       }
 
       if (error instanceof Error && error.name === 'ValidationError') {

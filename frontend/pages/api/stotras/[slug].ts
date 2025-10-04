@@ -61,6 +61,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         stotraMeaning: stotraData.translations[locale as string]?.stotraMeaning || '',
         videoId: stotraData.translations[locale as string]?.videoId || '',
         seoTitle: stotraData.translations[locale as string]?.seoTitle || '',
+        seoDescription: stotraData.translations[locale as string]?.seoDescription || '',
+        seoKeywords: stotraData.translations[locale as string]?.seoKeywords || '',
         createdAt: stotraData.createdAt,
         updatedAt: stotraData.updatedAt,
       };
@@ -131,6 +133,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           [stotraData.locale]: {
             title: stotraData.title,
             seoTitle: stotraData.seoTitle || null,
+            seoDescription: stotraData.seoDescription || null,
+            seoKeywords: stotraData.seoKeywords || null,
             videoId: stotraData.videoId || null,
             imageUrl: stotraData.imageUrl || null, // Translation-level image URL
             stotra: stotraData.stotra,

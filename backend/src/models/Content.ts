@@ -13,6 +13,8 @@ export type ContentStatus = 'draft' | 'published';
 export interface ITranslation {
   title: string;
   seoTitle?: string | null;
+  seoDescription?: string | null; // SEO meta description
+  seoKeywords?: string | null; // SEO keywords
   summary?: string | null; // Summary or brief description
   videoId?: string | null;
   imageUrl?: string | null; // Language-specific image URL

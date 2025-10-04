@@ -86,6 +86,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         [articleData.locale]: {
           title: articleData.title,
           seoTitle: articleData.seoTitle || null,
+          seoDescription: articleData.seoDescription || null,
+          seoKeywords: articleData.seoKeywords || null,
           videoId: articleData.videoId || null,
           imageUrl: articleData.imageUrl ? getRelativePath(articleData.imageUrl) : null, // Store relative path
           stotra: null, // Required for schema validation

@@ -110,11 +110,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         [stotraData.locale]: {
           title: stotraData.title,
           seoTitle: stotraData.seoTitle || null,
+          seoDescription: stotraData.seoDescription || null,
+          seoKeywords: stotraData.seoKeywords || null,
+          summary: null, // Required field for schema validation
           videoId: stotraData.videoId || null,
           imageUrl: stotraData.imageUrl || null, // Translation-level image URL
           stotra: stotraData.stotra,
           stotraMeaning: stotraData.stotraMeaning || null,
-          body: null, // Stotras don't use body field
+          body: null, // Stotras don't use body field but required for schema
         },
       },
     };

@@ -103,8 +103,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         status: article.status,
         locale: locale,
         seoTitle: translation?.seoTitle || '',
-        seoDescription: '',
-        seoKeywords: '',
+        seoDescription: translation?.seoDescription || '',
+        seoKeywords: translation?.seoKeywords || '',
         featuredImage: article.imageUrl || '', // Global image URL
         categories: article.categories || { typeIds: [], devaIds: [], byNumberIds: [] },
         tags: [],
@@ -161,6 +161,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           [articleData.locale]: {
             title: articleData.title,
             seoTitle: articleData.seoTitle || null,
+            seoDescription: articleData.seoDescription || null,
+            seoKeywords: articleData.seoKeywords || null,
             videoId: articleData.videoId || null,
             imageUrl: articleData.imageUrl ? getRelativePath(articleData.imageUrl) : null, // Store relative path
             stotra: null,
