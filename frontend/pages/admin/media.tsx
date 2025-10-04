@@ -1,6 +1,8 @@
 'use client';
 
+import AdminNav from '@/components/admin/AdminNav';
 import ImageUploader, { UploadedImage } from '@/components/admin/ImageUploader';
+import Layout from '@/components/Layout/Layout';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
@@ -188,18 +190,22 @@ export default function MediaManagement() {
 
   if (loading && images.length === 0) {
     return (
-      <Container fluid>
-        <div className="py-5 text-center">
-          <Spinner animation="border" />
-          <p className="mt-2">Loading media library...</p>
-        </div>
-      </Container>
+      <Layout>
+        <AdminNav />
+        <Container className="py-4">
+          <div className="py-5 text-center">
+            <Spinner animation="border" />
+            <p className="mt-2">Loading media library...</p>
+          </div>
+        </Container>
+      </Layout>
     );
   }
 
   return (
-    <Container fluid>
-      <div className="py-3">
+    <Layout>
+      <AdminNav />
+      <Container className="py-4">
         {/* Header */}
         <Row className="mb-4">
           <Col>
@@ -208,7 +214,7 @@ export default function MediaManagement() {
           </Col>
           <Col xs="auto">
             <Button variant="outline-secondary" onClick={() => router.push('/admin')}>
-              Back to Dashboard
+              ← Back to Dashboard
             </Button>
           </Col>
         </Row>
@@ -498,7 +504,7 @@ export default function MediaManagement() {
             </Button>
           </Modal.Footer>
         </Modal>
-      </div>
-    </Container>
+      </Container>
+    </Layout>
   );
 }

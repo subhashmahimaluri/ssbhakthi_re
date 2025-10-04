@@ -57,6 +57,13 @@ export default function AdminNav() {
               >
                 Categories
               </Nav.Link>
+              <Nav.Link
+                as={Link}
+                href="/admin/media"
+                className={router.pathname.startsWith('/admin/media') ? 'active' : ''}
+              >
+                Media
+              </Nav.Link>
             </Nav>
             <Nav>
               <Nav.Link as={Link} href="/">

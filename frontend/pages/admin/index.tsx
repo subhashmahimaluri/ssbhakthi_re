@@ -80,6 +80,52 @@ export default function AdminDashboard({ userRoles }: AdminDashboardProps) {
           </Card>
         </Col>
 
+        <Col md={6} lg={4} className="mb-4">
+          <Card className="h-100">
+            <Card.Body className="d-flex flex-column">
+              <Card.Title>🕉️ Stotras</Card.Title>
+              <Card.Text className="flex-grow-1">
+                Create, edit, and manage devotional stotras and prayers.
+              </Card.Text>
+              <div className="mt-auto">
+                <Link href="/admin/add-stotra" passHref>
+                  <Button variant="primary" className="mb-2 me-2">
+                    Add Stotra
+                  </Button>
+                </Link>
+                <Link href="/admin/stotras" passHref>
+                  <Button variant="outline-primary" className="mb-2">
+                    View Stotras
+                  </Button>
+                </Link>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col md={6} lg={4} className="mb-4">
+          <Card className="h-100">
+            <Card.Body className="d-flex flex-column">
+              <Card.Title>🖼️ Media</Card.Title>
+              <Card.Text className="flex-grow-1">
+                Upload, organize, and manage your media files and images.
+              </Card.Text>
+              <div className="mt-auto">
+                <Link href="/admin/media" passHref>
+                  <Button variant="primary" className="mb-2 me-2">
+                    Manage Media
+                  </Button>
+                </Link>
+                <Link href="/admin/media" passHref>
+                  <Button variant="outline-primary" className="mb-2">
+                    Upload Files
+                  </Button>
+                </Link>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+
         {userRoles.includes('admin') && (
           <Col md={6} lg={4} className="mb-4">
             <Card className="h-100">
