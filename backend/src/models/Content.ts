@@ -276,23 +276,65 @@ ContentSchema.statics['findByPath'] = function (path: string) {
   });
 };
 
-// Static method to find by category
+// Static method to find by category - supports both string and ObjectId inputs
 ContentSchema.statics['findByCategory'] = function (
-  categoryId: mongoose.Types.ObjectId,
+  categoryId: string | mongoose.Types.ObjectId,
   taxonomy?: 'type' | 'deva' | 'byNumber'
 ) {
-  if (taxonomy) {
-    return this.find({ [`categories.${taxonomy}Ids`]: categoryId });
+  // Convert string to ObjectId if needed, handle both formats
+  let searchConditions: any[] = [];
+
+  if (typeof categoryId === 'string') {
+    // Add string format search
+    if (taxonomy) {
+      searchConditions.push({ [`categories.${taxonomy}Ids`]: categoryId });
+    } else {
+      searchConditions.push(
+        { 'categories.typeIds': categoryId },
+        { 'categories.devaIds': categoryId },
+        { 'categories.byNumberIds': categoryId }
+      );
+    }
+
+    // Also add ObjectId format if string is a valid ObjectId
+    if (mongoose.Types.ObjectId.isValid(categoryId)) {
+      const objectId = new mongoose.Types.ObjectId(categoryId);
+      if (taxonomy) {
+        searchConditions.push({ [`categories.${taxonomy}Ids`]: objectId });
+      } else {
+        searchConditions.push(
+          { 'categories.typeIds': objectId },
+          { 'categories.devaIds': objectId },
+          { 'categories.byNumberIds': objectId }
+        );
+      }
+    }
+  } else {
+    // Input is already an ObjectId
+    if (taxonomy) {
+      searchConditions.push({ [`categories.${taxonomy}Ids`]: categoryId });
+    } else {
+      searchConditions.push(
+        { 'categories.typeIds': categoryId },
+        { 'categories.devaIds': categoryId },
+        { 'categories.byNumberIds': categoryId }
+      );
+    }
+
+    // Also search by string representation
+    const stringId = categoryId.toString();
+    if (taxonomy) {
+      searchConditions.push({ [`categories.${taxonomy}Ids`]: stringId });
+    } else {
+      searchConditions.push(
+        { 'categories.typeIds': stringId },
+        { 'categories.devaIds': stringId },
+        { 'categories.byNumberIds': stringId }
+      );
+    }
   }
 
-  // Search in all category types
-  return this.find({
-    $or: [
-      { 'categories.typeIds': categoryId },
-      { 'categories.devaIds': categoryId },
-      { 'categories.byNumberIds': categoryId },
-    ],
-  });
+  return this.find({ $or: searchConditions });
 };
 
 export const Content = mongoose.model<IContent>('Content', ContentSchema);

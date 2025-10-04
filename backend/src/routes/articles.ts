@@ -4,6 +4,14 @@ import { Content, LanguageCode } from '../models/Content';
 
 const router: Router = Router();
 
+// Utility function to ensure consistent category ID format (always convert to ObjectIds)
+const normalizeCategoryIds = (ids: string[] | undefined): mongoose.Types.ObjectId[] => {
+  if (!ids || !Array.isArray(ids)) return [];
+  return ids
+    .filter(id => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id))
+    .map(id => new mongoose.Types.ObjectId(id));
+};
+
 // Helper function to get language code
 function getLanguageCode(lang: string): LanguageCode {
   const validLangs: LanguageCode[] = ['en', 'te', 'hi', 'kn'];
@@ -300,7 +308,17 @@ router.put('/:canonicalSlug', async (req: Request, res: Response): Promise<void>
 
     if (status !== undefined) updateData.status = status;
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
-    if (categories !== undefined) updateData.categories = categories;
+
+    // Process categories with consistent ObjectId conversion
+    if (categories !== undefined) {
+      updateData.categories = {
+        typeIds: normalizeCategoryIds(categories?.typeIds),
+        devaIds: normalizeCategoryIds(categories?.devaIds),
+        byNumberIds: normalizeCategoryIds(categories?.byNumberIds),
+      };
+      console.log('📝 Article Update: Normalized categories:', updateData.categories);
+    }
+
     if (articleTitle !== undefined) updateData.articleTitle = articleTitle;
 
     // Merge translations - preserve existing ones and add/update new ones

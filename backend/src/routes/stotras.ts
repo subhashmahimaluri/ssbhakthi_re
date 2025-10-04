@@ -5,6 +5,14 @@ import { Content, LanguageCode } from '../models/Content';
 
 const router: Router = Router();
 
+// Utility function to ensure consistent category ID format (always convert to ObjectIds)
+const normalizeCategoryIds = (ids: string[] | undefined): mongoose.Types.ObjectId[] => {
+  if (!ids || !Array.isArray(ids)) return [];
+  return ids
+    .filter(id => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id))
+    .map(id => new mongoose.Types.ObjectId(id));
+};
+
 // Helper function to get language code
 function getLanguageCode(lang: string): LanguageCode {
   const validLangs: LanguageCode[] = ['en', 'te', 'hi', 'kn'];
@@ -48,26 +56,37 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     // Add language filter - only include documents that have the requested language
     query[`translations.${languageCode}`] = { $exists: true };
 
-    // Add category filter if provided
-    if (categoryId && typeof categoryId === 'string') {
-      // Support filtering by any of the category types
-      // Note: category IDs can be stored as either strings or ObjectIds
-      const categoryObjectId = new mongoose.Types.ObjectId(categoryId);
-      query.$or = [
-        { 'categories.typeIds': categoryId }, // String format
-        { 'categories.typeIds': categoryObjectId }, // ObjectId format
-        { 'categories.devaIds': categoryId }, // String format
-        { 'categories.devaIds': categoryObjectId }, // ObjectId format
-        { 'categories.byNumberIds': categoryId }, // String format
-        { 'categories.byNumberIds': categoryObjectId }, // ObjectId format
-      ];
-    }
+    console.log('🔍 Base query before category filter:', JSON.stringify(query, null, 2));
 
-    // Execute query with pagination
-    const [stotras, total] = await Promise.all([
-      Content.find(query).sort({ updatedAt: -1 }).skip(offsetNum).limit(limitNum).lean(),
-      Content.countDocuments(query),
-    ]);
+    let stotras: any[];
+    let total: number;
+
+    // Add category filter if provided - use the robust static method
+    if (categoryId && typeof categoryId === 'string') {
+      console.log('🏷️ Applying category filter with ID:', categoryId);
+
+      // Use the Content model static method that handles both string and ObjectId formats
+      const categoryFilteredQuery = (Content as any).findByCategory(categoryId);
+
+      // Combine with existing query conditions
+      const combinedQuery = categoryFilteredQuery.find(query);
+
+      // Execute query with pagination
+      [stotras, total] = await Promise.all([
+        combinedQuery.sort({ updatedAt: -1 }).skip(offsetNum).limit(limitNum).lean(),
+        (Content as any).findByCategory(categoryId).find(query).countDocuments(),
+      ]);
+
+      console.log(`🏷️ Category-filtered results: ${stotras.length} stotras found, ${total} total`);
+    } else {
+      // No category filter - use regular query
+      [stotras, total] = await Promise.all([
+        Content.find(query).sort({ updatedAt: -1 }).skip(offsetNum).limit(limitNum).lean(),
+        Content.countDocuments(query),
+      ]);
+
+      console.log(`📊 Regular query results: ${stotras.length} stotras found, ${total} total`);
+    }
 
     // Transform response to include only requested language translation
     const transformedStotras = stotras.map(stotra => ({
@@ -237,18 +256,11 @@ router.post(
 
       const contentsCollection = db.collection('contents');
 
-      // Convert string category IDs to ObjectIds
-      const convertToObjectIds = (ids: string[] | undefined): mongoose.Types.ObjectId[] => {
-        if (!ids || !Array.isArray(ids)) return [];
-        return ids
-          .filter(id => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id))
-          .map(id => new mongoose.Types.ObjectId(id));
-      };
-
+      // Use the utility function for consistent category ID conversion
       const processedCategories = {
-        typeIds: convertToObjectIds(categories?.typeIds),
-        devaIds: convertToObjectIds(categories?.devaIds),
-        byNumberIds: convertToObjectIds(categories?.byNumberIds),
+        typeIds: normalizeCategoryIds(categories?.typeIds),
+        devaIds: normalizeCategoryIds(categories?.devaIds),
+        byNumberIds: normalizeCategoryIds(categories?.byNumberIds),
       };
 
       const stotraDoc = {
@@ -362,7 +374,16 @@ router.put('/:canonicalSlug', async (req: Request, res: Response): Promise<void>
     if (status !== undefined) updateData.status = status;
     if (stotraTitle !== undefined) updateData.stotraTitle = stotraTitle;
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
-    if (categories !== undefined) updateData.categories = categories;
+
+    // Process categories with consistent ObjectId conversion
+    if (categories !== undefined) {
+      updateData.categories = {
+        typeIds: normalizeCategoryIds(categories?.typeIds),
+        devaIds: normalizeCategoryIds(categories?.devaIds),
+        byNumberIds: normalizeCategoryIds(categories?.byNumberIds),
+      };
+      console.log('📝 Update: Normalized categories:', updateData.categories);
+    }
 
     // Merge translations - preserve existing ones and add/update new ones
     if (translations) {
