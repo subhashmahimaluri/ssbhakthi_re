@@ -124,7 +124,8 @@ export default function ArticlePage() {
       setLoading(true);
       setError(null);
 
-      const apiUrl = `http://localhost:4000/rest/articles/${slug}?lang=${locale}`;
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_REST_URL || 'http://localhost:4000';
+      const apiUrl = `${backendUrl}/rest/articles/${slug}?lang=${locale}`;
       console.log('Fetching article from:', apiUrl);
 
       const response = await fetch(apiUrl, {

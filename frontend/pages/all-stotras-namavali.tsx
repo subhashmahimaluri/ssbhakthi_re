@@ -116,7 +116,8 @@ export default function AllStotras() {
         setLoadingMore(true);
       }
 
-      const apiUrl = `http://localhost:4000/rest/stotras?lang=${locale}&page=${page}&limit=${ITEMS_PER_PAGE}`;
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_REST_URL || 'http://localhost:4000';
+      const apiUrl = `${backendUrl}/rest/stotras?lang=${locale}&page=${page}&limit=${ITEMS_PER_PAGE}`;
       console.log('Fetching all stotras from:', apiUrl);
 
       const response = await fetch(apiUrl);

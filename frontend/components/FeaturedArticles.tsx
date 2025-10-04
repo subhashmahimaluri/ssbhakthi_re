@@ -54,7 +54,8 @@ const FeaturedArticles: React.FC<FeaturedArticlesProps> = ({ showItems = 4 }) =>
       try {
         setLoading(true);
         const currentLocale = locale || 'en';
-        const apiUrl = `http://localhost:4000/rest/articles?lang=${currentLocale}&status=published&page=1&limit=${showItems}`;
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_REST_URL || 'http://localhost:4000';
+        const apiUrl = `${backendUrl}/rest/articles?lang=${currentLocale}&status=published&page=1&limit=${showItems}`;
         console.log('Fetching featured articles from:', apiUrl);
 
         const response = await fetch(apiUrl);

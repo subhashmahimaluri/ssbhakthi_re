@@ -82,7 +82,8 @@ const HomeBlock: React.FC<HomeBlockProps> = ({ title, path, categoryKey, showIte
     try {
       setLoading(true);
       const categoryId = CATEGORY_IDS[categoryKey];
-      const apiUrl = `http://localhost:4000/rest/stotras?lang=${locale}&page=1&limit=${showItems}&categoryId=${categoryId}`;
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_REST_URL || 'http://localhost:4000';
+      const apiUrl = `${backendUrl}/rest/stotras?lang=${locale}&page=1&limit=${showItems}&categoryId=${categoryId}`;
 
       console.log(`Fetching ${categoryKey} from:`, apiUrl);
 

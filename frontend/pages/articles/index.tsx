@@ -62,7 +62,8 @@ export default function Articles() {
         setLoadingMore(true);
       }
       // Only show published articles for public users
-      const apiUrl = `http://localhost:4000/rest/articles?lang=${locale}&status=published&page=${page}&limit=${ITEMS_PER_PAGE}`;
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_REST_URL || 'http://localhost:4000';
+      const apiUrl = `${backendUrl}/rest/articles?lang=${locale}&status=published&page=${page}&limit=${ITEMS_PER_PAGE}`;
       console.log('Fetching articles from:', apiUrl);
 
       const response = await fetch(apiUrl);

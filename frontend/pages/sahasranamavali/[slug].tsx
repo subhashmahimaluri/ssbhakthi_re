@@ -130,7 +130,8 @@ export default function SahasranamavaliStotraPage() {
       setError(null);
       setIsFallbackLanguage(false);
 
-      const apiUrl = `http://localhost:4000/rest/stotras/${slug}?lang=${locale}`;
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_REST_URL || 'http://localhost:4000';
+      const apiUrl = `${backendUrl}/rest/stotras/${slug}?lang=${locale}`;
       console.log('Fetching sahasranamavali stotra from:', apiUrl);
 
       const response = await fetch(apiUrl, {
@@ -154,7 +155,7 @@ export default function SahasranamavaliStotraPage() {
             // If current locale is not available, try with the first available language
             if (!errorData.error.availableLanguages.includes(locale)) {
               const fallbackLang = errorData.error.availableLanguages[0];
-              const fallbackUrl = `http://localhost:4000/rest/stotras/${slug}?lang=${fallbackLang}`;
+              const fallbackUrl = `${backendUrl}/rest/stotras/${slug}?lang=${fallbackLang}`;
 
               const fallbackResponse = await fetch(fallbackUrl, {
                 signal: abortControllerRef.current.signal,

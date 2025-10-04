@@ -35,7 +35,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { locale = 'en' } = req.query;
 
       // Call backend API to get stotra
-      const response = await fetch(`http://localhost:4000/rest/stotras/${slug}?lang=${locale}`);
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_REST_URL || 'http://localhost:4000';
+      const response = await fetch(`${backendUrl}/rest/stotras/${slug}?lang=${locale}`);
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -147,7 +148,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('Updating stotra with data:', JSON.stringify(backendData, null, 2));
 
       // Call backend API
-      const response = await fetch(`http://localhost:4000/rest/stotras/${slug}`, {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_REST_URL || 'http://localhost:4000';
+      const response = await fetch(`${backendUrl}/rest/stotras/${slug}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

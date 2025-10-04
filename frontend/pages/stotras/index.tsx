@@ -65,7 +65,8 @@ export default function HymnsPrayers() {
       }
 
       // Filter by Hymns / Prayers category ID
-      const apiUrl = `http://localhost:4000/rest/stotras?lang=${locale}&page=${page}&limit=${ITEMS_PER_PAGE}&categoryId=${HYMNS_PRAYERS_CATEGORY_ID}`;
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_REST_URL || 'http://localhost:4000';
+      const apiUrl = `${backendUrl}/rest/stotras?lang=${locale}&page=${page}&limit=${ITEMS_PER_PAGE}&categoryId=${HYMNS_PRAYERS_CATEGORY_ID}`;
       console.log('Fetching hymns/prayers from:', apiUrl);
 
       const response = await fetch(apiUrl);

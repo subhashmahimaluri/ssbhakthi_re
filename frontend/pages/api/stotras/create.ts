@@ -135,7 +135,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Call backend API
-    const response = await fetch('http://localhost:4000/rest/stotras', {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_REST_URL || 'http://localhost:4000';
+    const response = await fetch(`${backendUrl}/rest/stotras`, {
       method: 'POST',
       headers,
       body: JSON.stringify(backendData),

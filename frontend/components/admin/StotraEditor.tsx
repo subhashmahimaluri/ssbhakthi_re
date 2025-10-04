@@ -242,11 +242,11 @@ export default function StotraEditor({ stotraId }: StotraEditorProps) {
     if (!url) return url;
 
     // Remove localhost URLs (both http and https) - keep the leading slash
-    if (url.startsWith('http://localhost:3000')) {
-      return url.replace('http://localhost:3000', '');
+    if (url.startsWith('http://localhost:')) {
+      return url.replace(/^http:\/\/localhost:\d+/, '');
     }
-    if (url.startsWith('https://localhost:3000')) {
-      return url.replace('https://localhost:3000', '');
+    if (url.startsWith('https://localhost:')) {
+      return url.replace(/^https:\/\/localhost:\d+/, '');
     }
 
     return url;

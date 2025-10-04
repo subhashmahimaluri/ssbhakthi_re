@@ -53,7 +53,7 @@ const CKEditor = forwardRef<CKEditorRef, CKEditorProps>(
                   formData.append('file', file);
 
                   fetch(
-                    `${process.env.NEXT_PUBLIC_BACKEND_REST_URL || 'http://localhost:3001'}/rest/media/upload`,
+                    `${process.env.NEXT_PUBLIC_BACKEND_REST_URL || 'http://localhost:4000'}/rest/media/upload`,
                     {
                       method: 'POST',
                       headers: {

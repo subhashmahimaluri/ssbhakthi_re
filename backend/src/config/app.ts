@@ -10,12 +10,14 @@ export const appConfig: AppConfig = {
   mongoUrl: process.env['MONGODB_URL'] || 'mongodb://localhost:27017/ssbhakthi_api',
   redisUrl: process.env['REDIS_URL'] || 'redis://localhost:6379',
   cors: {
-    origin: [
-      'http://localhost:3000', // Telugu/English frontend
-      'http://localhost:3001', // Hindi frontend
-      'http://localhost:3002', // Kannada frontend
-      // Add production URLs when available
-    ],
+    origin: process.env['CORS_ORIGIN']
+      ? process.env['CORS_ORIGIN'].split(',')
+      : [
+          'http://localhost:3000', // Telugu/English frontend
+          'http://localhost:3001', // Hindi frontend
+          'http://localhost:3002', // Kannada frontend
+          // Add production URLs when available
+        ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with'],
